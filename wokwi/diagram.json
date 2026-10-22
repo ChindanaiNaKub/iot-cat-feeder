@@ -7,8 +7,8 @@
     { "type": "wokwi-servo", "id": "servo1", "top": 120, "left": 180, "attrs": {} }
   ],
   "connections": [
-    [ "esp:D18", "servo1:PWM", "orange", [] ],
-    [ "esp:VIN", "servo1:V+", "red", [] ],
+    [ "esp:18", "servo1:PWM", "orange", [] ],
+    [ "esp:5V", "servo1:V+", "red", [] ],
     [ "esp:GND.1", "servo1:GND", "black", [] ]
   ],
   "dependencies": {}
