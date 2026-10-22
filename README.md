@@ -4,6 +4,7 @@
 
 ## โครงสร้าง
 
+- `docs/plan.md` แผนงาน ลำดับงาน และความเสี่ยง
 - `docs/` เอกสารโปรเจกต์ (ผังการต่อ, rubric)
 - `docs/wiring_nodemcu_servo.html` ผังการต่อ NodeMCU + servo + powerbank
 - `docs/Project_Rubric_Idea50_Circuit30_Doc20.xlsx` เกณฑ์การให้คะแนน
