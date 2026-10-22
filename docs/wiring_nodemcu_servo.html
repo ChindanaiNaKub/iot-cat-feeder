@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>ผังการต่อ NodeMCU + Servo</title>
+<style>
+  body { font-family: sans-serif; margin: 24px; color: #222; background: #fafafa; }
+  h1 { font-size: 20px; margin: 0 0 8px; }
+  p.note { margin: 4px 0; font-size: 14px; }
+  table { border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+  td, th { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+  th { background: #eee; }
+  .warn { color: #b00020; font-weight: bold; }
+  svg text { font-size: 13px; fill: #222; }
+  svg .small { font-size: 11px; fill: #555; }
+</style>
+</head>
+<body>
+<h1>ผังการต่อ NodeMCU + Servo SG90 + Powerbank</h1>
+<p class="note">ต่อ GND ร่วมกันทุกจุด · ต่อ capacitor 470 µF คร่อม VIN กับ GND ใกล้ servo</p>
+
+<svg width="900" height="470" viewBox="0 0 900 470" xmlns="http://www.w3.org/2000/svg">
+  <!-- Powerbank -->
+  <rect x="40" y="180" width="160" height="110" rx="8" fill="#e8f0ff" stroke="#3366aa" stroke-width="2"/>
+  <text x="120" y="215" text-anchor="middle">Powerbank</text>
+  <text x="120" y="235" text-anchor="middle" class="small">5V USB out</text>
+
+  <!-- micro USB to NodeMCU -->
+  <line x1="200" y1="235" x2="330" y2="235" stroke="#666" stroke-width="3" stroke-dasharray="6 4"/>
+  <text x="265" y="225" text-anchor="middle" class="small">สาย micro USB</text>
+
+  <!-- NodeMCU -->
+  <rect x="330" y="120" width="220" height="300" rx="8" fill="#e6f7e6" stroke="#2e7d32" stroke-width="2"/>
+  <text x="440" y="145" text-anchor="middle" font-weight="bold">NodeMCU (ESP8266)</text>
+  <rect x="410" y="110" width="60" height="14" fill="#999"/>
+  <text x="440" y="107" text-anchor="middle" class="small">micro USB</text>
+
+  <!-- Pins on right edge -->
+  <circle cx="550" cy="170" r="4" fill="#d32f2f"/>
+  <text x="540" y="174" text-anchor="end">VIN (5V)</text>
+  <circle cx="550" cy="200" r="4" fill="#222"/>
+  <text x="540" y="204" text-anchor="end">GND</text>
+  <circle cx="550" cy="230" r="4" fill="#bbb"/>
+  <text x="540" y="234" text-anchor="end" class="warn">3V3 ห้ามต่อ servo</text>
+  <circle cx="550" cy="290" r="4" fill="#f57c00"/>
+  <text x="540" y="294" text-anchor="end">D5 (GPIO14) สัญญาณ</text>
+  <text x="440" y="400" text-anchor="middle" class="small">D4 = LED บนบอร์ด (ทดสอบ blink)</text>
+
+  <!-- Wires NodeMCU -> servo -->
+  <path d="M550 170 H620 V230 H680" fill="none" stroke="#d32f2f" stroke-width="3"/>
+  <path d="M550 200 H610 V260 H680" fill="none" stroke="#222" stroke-width="3"/>
+  <path d="M550 290 H680" fill="none" stroke="#f57c00" stroke-width="3"/>
+  <text x="615" y="160" class="small" fill="#d32f2f">แดง (VCC)</text>
+  <text x="600" y="282" class="small" fill="#f57c00">ส้ม (สัญญาณ)</text>
+
+  <!-- Servo -->
+  <rect x="680" y="200" width="180" height="110" rx="8" fill="#fff3e0" stroke="#ef6c00" stroke-width="2"/>
+  <text x="770" y="235" text-anchor="middle">Servo SG90</text>
+  <text x="770" y="255" text-anchor="middle" class="small">ต่อฝาถังอาหาร</text>
+
+  <!-- Capacitor -->
+  <rect x="700" y="350" width="70" height="50" rx="6" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="735" y="372" text-anchor="middle">470 µF</text>
+  <text x="735" y="390" text-anchor="middle" class="small">+ ไป VCC / − ไป GND</text>
+  <text x="620" y="420" class="small">Capacitor ต่อคร่อม servo กันไฟตก (ขั้วบวกต้องต่อด้านแดง)</text>
+</svg>
+
+<table>
+  <tr><th>จาก</th><th>ไป</th><th>สี/หมายเหตุ</th></tr>
+  <tr><td>Powerbank</td><td>NodeMCU</td><td>สาย micro USB</td></tr>
+  <tr><td>NodeMCU VIN</td><td>Servo VCC</td><td>สายแดง</td></tr>
+  <tr><td>NodeMCU GND</td><td>Servo GND</td><td>สายดำ/น้ำตาล</td></tr>
+  <tr><td>NodeMCU D5</td><td>Servo สัญญาณ</td><td>สายส้ม/เหลือง</td></tr>
+  <tr><td>Capacitor 470 µF</td><td>VCC / GND ของ servo</td><td>+ ไปแดง, − ไปดำ</td></tr>
+</table>
+
+<p class="note"><span class="warn">ข้อห้าม:</span> อย่าต่อ servo เข้า 3V3 และอย่าต่อ Capacitor กลับขั้ว</p>
+</body>
+</html>
