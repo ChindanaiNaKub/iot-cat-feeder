@@ -224,16 +224,23 @@ def para(doc, text, size=11, italic=False, align="justify", space_after=6):
 
 
 def _rich(par, text, size=11, italic=False):
-    """Split on backticks so identifiers render in monospace without a run per word."""
+    """Render `monospace` and **bold** spans without a run per word."""
     for index, chunk in enumerate(text.split("`")):
         if not chunk:
             continue
-        run = par.add_run(chunk)
-        run.font.size = Pt(size)
-        run.font.italic = italic
         if index % 2:
+            run = par.add_run(chunk)
             run.font.name = "Consolas"
             run.font.size = Pt(size - 1)
+            run.font.italic = italic
+            continue
+        for bold_index, piece in enumerate(chunk.split("**")):
+            if not piece:
+                continue
+            run = par.add_run(piece)
+            run.font.size = Pt(size)
+            run.font.italic = italic
+            run.font.bold = bold_index % 2 == 1
 
 
 def bullets(doc, items, size=11):
