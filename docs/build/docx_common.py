@@ -20,6 +20,19 @@ HEADER_FILL = "DCE6F2"
 
 HEADINGS = []
 
+# Set by the caller. A consolidated volume shifts chapter numbers up and renames
+# appendices so three reports can share one numbering sequence.
+CHAPTER_SHIFT = 0
+APPENDIX_LETTER = "A"
+
+
+def sec(number):
+    """Shift a section number like "2.10" by the current chapter shift."""
+    if CHAPTER_SHIFT == 0:
+        return number
+    head, _, tail = number.partition(".")
+    return str(int(head) + CHAPTER_SHIFT) + (("." + tail) if tail else "")
+
 
 def _fonts(style, name=BODY_FONT):
     rpr = style.element.get_or_add_rPr()
@@ -166,20 +179,37 @@ def table_of_contents(doc, heading="Table of Contents", entries=None):
 
 
 def h1(doc, number, title):
-    text = f"Chapter {number}  {title}"
+    if isinstance(number, str) and number.isalpha():
+        text = f"Appendix {APPENDIX_LETTER}  {title}"
+    else:
+        text = f"Chapter {int(number) + CHAPTER_SHIFT}  {title}"
     HEADINGS.append((1, text))
     return doc.add_heading(text, level=1)
 
 
 def h2(doc, number, title):
-    text = f"{number}  {title}"
+    text = f"{sec(number)}  {title}"
     HEADINGS.append((2, text))
     return doc.add_heading(text, level=2)
 
 
 def h3(doc, number, title):
-    text = f"{number}  {title}"
+    text = f"{sec(number)}  {title}"
     return doc.add_heading(text, level=3)
+
+
+def part(doc, label, title, blurb=""):
+    text = f"{label}  {title}"
+    HEADINGS.append((1, text))
+    par = doc.add_heading(text, level=1)
+    if blurb:
+        note = doc.add_paragraph()
+        note.paragraph_format.space_before = Pt(10)
+        run = note.add_run(blurb)
+        run.font.size = Pt(11)
+        run.font.italic = True
+        run.font.color.rgb = MUTED
+    return par
 
 
 def para(doc, text, size=11, italic=False, align="justify", space_after=6):

@@ -4,7 +4,7 @@ import pathlib
 
 import meta
 from docx_common import (
-    HEADINGS, Numbering, cover, h1, h2, h3, para, bullets, numbered, new_document, save,
+    HEADINGS, sec, Numbering, cover, h1, h2, h3, para, bullets, numbered, new_document, save,
     table, table_of_contents, figure,
 )
 
@@ -14,12 +14,18 @@ FIG = pathlib.Path(__file__).parent / "figures"
 def build(out_dir, toc_entries=None):
     HEADINGS.clear()
     doc = new_document(meta.TITLE_PROPOSAL, meta.PROJECT)
-    counter = Numbering()
+    _cover(doc)
+    table_of_contents(doc, entries=toc_entries)
+    write_body(doc, Numbering())
+    return save(doc, pathlib.Path(out_dir) / "IoT_Cat_Feeder_Proposal_V1.0.0.docx")
 
+
+def _cover(doc):
     cover(doc, meta.TITLE_PROPOSAL, meta.PROJECT, meta.TAGLINE, meta.MEMBER, meta.STUDENT_ID,
           meta.PROGRAMME, meta.COLLEGE, meta.MONTH, meta.ADVISOR)
-    table_of_contents(doc, entries=toc_entries)
 
+
+def write_body(doc, counter):
     # ---------------------------------------------------------------- chapter 1
     h1(doc, 1, "Introduction")
 
@@ -239,7 +245,7 @@ def build(out_dir, toc_entries=None):
     ], widths=[1.2, 9.3, 3.0, 3.0])
 
     h2(doc, "3.3", "System Architecture")
-    para(doc, "The context diagram in Figure 1 shows every entity that the device exchanges energy or data "
+    para(doc, "The context diagram below shows every entity that the device exchanges energy or data "
               "with. Dashed elements are planned and are marked as such so the diagram does not claim hardware "
               "that is not on the bench.")
     figure(doc, counter, str(FIG / "context.png"), "Context diagram of the proposed system.", width_cm=16.5)
@@ -327,5 +333,3 @@ def build(out_dir, toc_entries=None):
         "Replace the cardboard enclosure with a printed or laser-cut body.",
     ])
 
-    path = pathlib.Path(out_dir) / "IoT_Cat_Feeder_Proposal_V1.0.0.docx"
-    return save(doc, path)

@@ -4,7 +4,7 @@ import pathlib
 
 import meta
 from docx_common import (
-    HEADINGS, Numbering, cover, h1, h2, h3, para, bullets, numbered, new_document, save,
+    HEADINGS, sec, Numbering, cover, h1, h2, h3, para, bullets, numbered, new_document, save,
     table, table_of_contents, figure,
 )
 
@@ -25,12 +25,18 @@ def use_case(doc, counter, code, title, fields):
 def build(out_dir, toc_entries=None):
     HEADINGS.clear()
     doc = new_document(meta.TITLE_SRS, meta.PROJECT)
-    counter = Numbering()
+    _cover(doc)
+    table_of_contents(doc, entries=toc_entries)
+    write_body(doc, Numbering())
+    return save(doc, pathlib.Path(out_dir) / "IoT_Cat_Feeder_SRS_V1.0.0.docx")
 
+
+def _cover(doc):
     cover(doc, meta.TITLE_SRS, meta.PROJECT, meta.TAGLINE, meta.MEMBER, meta.STUDENT_ID,
           meta.PROGRAMME, meta.COLLEGE, meta.MONTH, meta.ADVISOR)
-    table_of_contents(doc, entries=toc_entries)
 
+
+def write_body(doc, counter):
     # ---------------------------------------------------------------- chapter 1
     h1(doc, 1, "Introduction")
 
@@ -41,7 +47,7 @@ def build(out_dir, toc_entries=None):
     para(doc, "The document follows the structure of ISO/IEC/IEEE 29148 for software requirements. The section "
               "order is adapted to the size of the project: the standard separates product functions from "
               "detailed requirements, which this document keeps, and it separates verification from the "
-              "requirement text, which this document keeps as a matrix in Section 2.10.")
+              f"requirement text, which this document keeps as a matrix in Section {sec('2.10')}.")
 
     h2(doc, "1.2", "Scope")
     para(doc, "The product is a single-board appliance that dispenses dry cat food on a schedule and on demand, "
@@ -313,7 +319,7 @@ def build(out_dir, toc_entries=None):
     ])
 
     h2(doc, "2.4", "Activity Diagram")
-    para(doc, "Figure 3 shows one iteration of the main loop. The close of the flap is evaluated on every "
+    para(doc, "The activity diagram below shows one iteration of the main loop. The close of the flap is evaluated on every "
               "iteration and does not depend on an HTTP request completing.")
     figure(doc, counter, str(FIG / "activity.png"), "Main loop activity.", width_cm=16.5)
 
@@ -331,7 +337,8 @@ def build(out_dir, toc_entries=None):
         ["FR-05", "The device shall close the flap within 1000 ms of opening it, on every code path.",
          "Must", "T", "Delivered"],
         ["FR-06", "The device shall reject any method other than `POST` on `/feed`.", "Must", "T", "Delivered"],
-        ["FR-07", "The device shall return the eight status fields defined in Table 12 on `GET /status`.",
+        ["FR-07", "The device shall return the eight status fields defined in the status table above on "
+                  "`GET /status`.",
          "Must", "T", "Delivered"],
         ["FR-08", "The dashboard shall refresh its values every 2 seconds without user action.",
          "Must", "D", "Delivered"],
@@ -462,20 +469,20 @@ def build(out_dir, toc_entries=None):
     para(doc, "The assessment rubric weights Idea 50, Circuit 30, and Doc 20. The table maps each criterion to "
               "the section that satisfies it.")
     table(doc, counter, "Rubric coverage", ["Criterion", "Weight", "Where it is answered"], [
-        ["Concept and problem fit", "Idea", "Proposal 1.1 and 1.2"],
-        ["Innovation and impact", "Idea", "Proposal 2.1.1 and 2.1.3, SRS 2.1.5"],
-        ["UX and use-case clarity", "Idea", "Proposal 1.3, SRS 2.3 and 2.6.1"],
-        ["Architecture concept and feasibility", "Idea", "Proposal 2.2 and 3.3, SDD Chapter 2"],
-        ["Hardware implementation", "Circuit", "SRS 2.6.3, SDD 2.4"],
-        ["Software and firmware", "Circuit", "SRS 2.5, SDD 3.2"],
-        ["System integration and IoT connectivity", "Circuit", "SRS 2.6.2, SDD 3.5"],
+        ["Concept and problem fit", "Idea", "Proposal, motivation and purpose"],
+        ["Innovation and impact", "Idea", "Proposal, strengths and opportunities; feature F5"],
+        ["UX and use-case clarity", "Idea", "Proposal, target users; use case descriptions; dashboard layout"],
+        ["Architecture concept and feasibility", "Idea", "Proposal, technology review; design document, "
+                                                       "architecture chapter"],
+        ["Hardware implementation", "Circuit", "Hardware interface table; design document, power design"],
+        ["Software and firmware", "Circuit", "Functional requirements; design document, component description"],
+        ["System integration and IoT connectivity", "Circuit", "HTTP interface; design document, interface "
+                                                              "design"],
         ["SRS", "Doc", "This document"],
-        ["Proposal and abstract", "Doc", "Proposal Chapter 1"],
-        ["SDD", "Doc", "SDD Chapters 2 and 3"],
-        ["Output and discussion", "Doc", "Output chapter, to be written after testing"],
-        ["Photos and evidence", "Doc", "Test record, to be captured on 3 November"],
-        ["Conclusion and future work", "Doc", "Proposal 5.5, and the conclusion chapter"],
+        ["Proposal and abstract", "Doc", "Proposal, introduction"],
+        ["SDD", "Doc", "Design document, architecture and detailed design"],
+        ["Output and discussion", "Doc", "To be written after testing on 3 November"],
+        ["Photos and evidence", "Doc", "Test record and demonstration video"],
+        ["Conclusion and future work", "Doc", "Proposal, future work; conclusion to be written"],
     ], widths=[6.4, 2.4, 7.7])
 
-    path = pathlib.Path(out_dir) / "IoT_Cat_Feeder_SRS_V1.0.0.docx"
-    return save(doc, path)

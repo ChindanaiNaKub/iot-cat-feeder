@@ -4,7 +4,7 @@ import pathlib
 
 import meta
 from docx_common import (
-    HEADINGS, Numbering, cover, h1, h2, h3, para, bullets, numbered, new_document, save,
+    HEADINGS, sec, Numbering, cover, h1, h2, h3, para, bullets, numbered, new_document, save,
     table, table_of_contents, figure,
 )
 
@@ -14,12 +14,18 @@ FIG = pathlib.Path(__file__).parent / "figures"
 def build(out_dir, toc_entries=None):
     HEADINGS.clear()
     doc = new_document(meta.TITLE_SDD, meta.PROJECT)
-    counter = Numbering()
+    _cover(doc)
+    table_of_contents(doc, entries=toc_entries)
+    write_body(doc, Numbering())
+    return save(doc, pathlib.Path(out_dir) / "IoT_Cat_Feeder_SDD_V1.0.0.docx")
 
+
+def _cover(doc):
     cover(doc, meta.TITLE_SDD, meta.PROJECT, meta.TAGLINE, meta.MEMBER, meta.STUDENT_ID,
           meta.PROGRAMME, meta.COLLEGE, meta.MONTH, meta.ADVISOR)
-    table_of_contents(doc, entries=toc_entries)
 
+
+def write_body(doc, counter):
     # ---------------------------------------------------------------- chapter 1
     h1(doc, 1, "Introduction")
 
@@ -187,7 +193,7 @@ def build(out_dir, toc_entries=None):
         "face.",
         "The design trades a rare false negative for a common false positive. A clock that jumps backward one "
         "minute re-enters a previous key and is suppressed. A clock that jumps backward by hours may re-enter "
-        "a key that matches a meal time, which is the residual risk recorded in Section 3.7.",
+        f"a key that matches a meal time, which is the residual risk recorded in Section {sec('3.7')}.",
     ])
 
     h3(doc, "3.2.2", "Algorithm: median filtering for ranging (target)")
@@ -371,15 +377,13 @@ def build(out_dir, toc_entries=None):
 
     h1(doc, "A", "Design Review Checklist")
     table(doc, counter, "Design review", ["Check", "Result"], [
-        ["Every requirement maps to a component", "Yes, Section 4.1"],
-        ["Every component has one responsibility", "Yes, Section 2.3"],
+        ["Every requirement maps to a component", f"Yes, Section {sec('4.1')}"],
+        ["Every component has one responsibility", f"Yes, Section {sec('2.3')}"],
         ["No blocking call in the main loop", "Yes, `delay` is used only in the bring-up sketch"],
         ["The flap has a bounded open time in every path", "Yes, the loop enforces it independent of HTTP"],
-        ["The failure of a client does not change device state", "Yes, Section 3.7"],
+        ["The failure of a client does not change device state", f"Yes, Section {sec('3.7')}"],
         ["Electrical limits of each pin are respected", "Partly. The echo divider is required for the target "
-                                                       "sensors and is recorded in 1.6 of the SRS"],
-        ["The design states what it does not do", "Yes, Section 4.3"],
+                                                       "sensors and is recorded in the SRS limitations"],
+        ["The design states what it does not do", f"Yes, Section {sec('4.3')}"],
     ], widths=[8.6, 7.9])
 
-    path = pathlib.Path(out_dir) / "IoT_Cat_Feeder_SDD_V1.0.0.docx"
-    return save(doc, path)

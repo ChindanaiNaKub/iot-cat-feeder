@@ -14,6 +14,7 @@ import tempfile
 
 import docx_common
 import gen_proposal
+import gen_report
 import gen_sdd
 import gen_srs
 
@@ -22,6 +23,7 @@ DOCS = [
     (gen_proposal, "IoT_Cat_Feeder_Proposal_V1.0.0.docx"),
     (gen_srs, "IoT_Cat_Feeder_SRS_V1.0.0.docx"),
     (gen_sdd, "IoT_Cat_Feeder_SDD_V1.0.0.docx"),
+    (gen_report, "IoT_Cat_Feeder_Report_V1.0.0.docx"),
 ]
 
 
