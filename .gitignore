@@ -1,2 +1,3 @@
 .expect/
 secrets.h
+__pycache__/

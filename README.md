@@ -5,9 +5,9 @@
 ## โครงสร้าง
 
 - `docs/plan.md` แผนงาน ลำดับงาน และความเสี่ยง
-- `docs/proposal.md` ข้อเสนอโครงการ ปัญหา เป้าหมาย ขอบเขต และงบประมาณ
-- `docs/srs.md` ความต้องการของระบบ เกณฑ์ยอมรับ และส่วนต่อประสาน
-- `docs/sdd.md` การออกแบบ สถาปัตยกรรม วงจร สถานะ และแผนทดสอบ
+- `docs/build/out/` เอกสารส่งอาจารย์ฉบับภาษาอังกฤษ (docx และ pdf) คือ Proposal, SRS, SDD
+- `docs/build/` สคริปต์ที่สร้างเอกสารทั้งสามฉบับและแผนภาพ รัน `python3 build.py` เพื่อสร้างใหม่
+- `docs/proposal.md`, `docs/srs.md`, `docs/sdd.md` ฉบับร่างภาษาไทย ใช้เป็น quick reference
 - `docs/` เอกสารโปรเจกต์ (ผังการต่อ, rubric)
 - `docs/wiring_nodemcu_servo.html` ผังการต่อ NodeMCU + servo + powerbank
 - `docs/feeder_3d.html` ภาพรวม 3D ของเครื่องทั้งเครื่อง หมุนดูได้และกดปุ่มให้อาหารจำลอง
