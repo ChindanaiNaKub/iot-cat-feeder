@@ -35,7 +35,7 @@ const int LEVEL_ECHO = D2;
 
 // ---------------------------------------------------------------- ค่าปรับแต่ง
 const int CLOSED_DEG = 0;
-const int OPEN_DEG = 180;            // ถ้า servo สั่นหรือฝาชน ให้ลดค่านี้ลงตามที่วัดได้จริง
+const int OPEN_DEG = 90;             // ค่าชั่วคราว ให้รัน servo_test หามุมจริงก่อน แล้วใส่ค่าที่ได้ลบ 5
 const unsigned long OPEN_MS = 900;
 
 const int SCHEDULE_COUNT = 3;
