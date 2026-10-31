@@ -360,6 +360,14 @@ void keepWifi() {
 
 void setup() {
   Serial.begin(115200);
+  delay(200);
+  Serial.println();
+  Serial.println("=== IoT Cat Feeder v2 ===");
+  Serial.print("reset reason: ");
+  Serial.println(ESP.getResetReason());
+  Serial.print("free heap: ");
+  Serial.println(ESP.getFreeHeap());
+
   servo.attach(SERVO_PIN);
   servo.write(CLOSED_DEG);
 
@@ -396,6 +404,19 @@ void setup() {
 
 void loop() {
   server.handleClient();
+
+  // บรรทัดสถานะทุก 2 วินาที ถ้าบรรทัดนี้หยุดไหล แปลว่าลูปค้าง
+  static unsigned long lastStatus = 0;
+  if (millis() - lastStatus > 2000) {
+    lastStatus = millis();
+    Serial.printf("flap %s  meals %d  level %d%%  near %.1f cm  cat %s  rssi %d\n",
+                  feeder.open ? "open" : "shut",
+                  feeder.countToday,
+                  hopperPercent(),
+                  presence.last,
+                  catNow ? "yes" : "no",
+                  WiFi.RSSI());
+  }
 
   unsigned long now = millis();
   sampleRanger(presence, now);
