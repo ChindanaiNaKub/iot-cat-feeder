@@ -12,6 +12,9 @@
 - `docs/` เอกสารโปรเจกต์ (ผังการต่อ, rubric)
 - `docs/wiring_nodemcu_servo.html` ผังการต่อ NodeMCU + servo + powerbank
 - `docs/feeder_3d.html` ภาพรวม 3D ของเครื่องทั้งเครื่อง หมุนดูได้และกดปุ่มให้อาหารจำลอง
+- `docs/wiring_full.html` ผังการต่อระบบเต็ม NodeMCU + servo + ultrasonic 2 ตัว + HX711
+- `firmware/ultrasonic_test/ultrasonic_test.ino` ทดสอบ HC-SR04 สองตัว
+- `firmware/scale_test/scale_test.ino` ทดสอบและคาลิเบรต load cell
 - `firmware/servo_test/servo_test.ino` โค้ดทดสอบ servo บนบอร์ดจริง (D5, VIN, GND)
 - `firmware/feeder/feeder.ino` โค้ดหลัก หน้าเว็บ + ปุ่มให้อาหาร + ตั้งเวลา NTP + ประวัติการให้อาหาร
 - `docs/Project_Rubric_Idea50_Circuit30_Doc20.xlsx` เกณฑ์การให้คะแนน

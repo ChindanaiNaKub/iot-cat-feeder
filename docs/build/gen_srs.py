@@ -78,8 +78,8 @@ def write_body(doc, counter):
         ["F1", "Scheduled feeding", "Dispenses one meal at each configured time, using network time.", "Delivered"],
         ["F2", "On-demand feeding", "Dispenses one meal when the owner presses the dashboard button.", "Delivered"],
         ["F3", "Status and history", "Reports flap state, daily count, last meal, and link quality.", "Delivered"],
-        ["F4", "Presence-triggered feeding", "Dispenses a meal when a cat is detected near the bowl.", "Target"],
-        ["F5", "Portion and level control", "Dispenses a measured mass and reports hopper level.", "Target"],
+        ["F4", "Presence-triggered feeding", "Dispenses a meal when a cat is detected near the bowl.", "Parts received"],
+        ["F5", "Portion and level control", "Dispenses a measured mass and reports hopper level.", "Parts received"],
     ], widths=[1.2, 4.2, 8.1, 3.0])
 
     h2(doc, "1.5", "User Characteristics")
@@ -141,8 +141,8 @@ def write_body(doc, counter):
         ["Schedule minute", "A minute of local time that appears in the configured meal table."],
         ["Source", "The trigger of a meal: `manual`, `schedule`, or `presence`."],
         ["Minute key", "An integer that identifies one calendar minute, used to prevent duplicate meals."],
-        ["Target feature", "A requirement that is specified and designed but ships only if the parts pass "
-                           "test before 2 November 2026."],
+        ["Parts received", "The hardware for this requirement is on the bench and wired. The firmware "
+                           "integration and the acceptance test are still outstanding."],
     ], widths=[3.6, 12.9])
 
     h2(doc, "1.9", "References")
@@ -350,13 +350,13 @@ def write_body(doc, counter):
          "Must", "T", "Delivered"],
         ["FR-12", "The device shall return 404 for every undefined path.", "Must", "T", "Delivered"],
         ["FR-13", "The device shall detect a cat within 60 cm of the bowl after three consecutive readings.",
-         "Should", "T", "Target"],
+         "Should", "T", "Parts received"],
         ["FR-14", "The device shall not dispense more than one presence-triggered meal in 30 minutes.",
-         "Should", "T", "Target"],
+         "Should", "T", "Parts received"],
         ["FR-15", "The device shall dispense a mass within 15 percent of the configured target.",
-         "Could", "T", "Target"],
+         "Could", "T", "Parts received"],
         ["FR-16", "The device shall report hopper level as a percentage of usable depth.", "Could", "D",
-         "Target"],
+         "Parts received"],
         ["FR-17", "The device shall persist the daily history across a reboot.", "Could", "T", "Future work"],
         ["FR-18", "The device shall refuse a meal when the configured daily cap is reached.", "Should", "T",
          "Future work"],
@@ -397,9 +397,13 @@ def write_body(doc, counter):
     table(doc, counter, "Hardware interface", ["Device", "Signal", "Pin", "Electrical notes", "Status"], [
         ["Servo SG90", "PWM", "D5, GPIO14", "50 Hz, 1 to 2 ms pulse. Powered from VIN, not 3V3.", "Connected"],
         ["Servo SG90", "Supply", "VIN, GND", "5 V from powerbank. 470 uF across the rail.", "Connected"],
-        ["HC-SR04", "Trig", "To be assigned", "3.3 V drive is accepted.", "Target"],
-        ["HC-SR04", "Echo", "To be assigned", "5 V output requires a divider for 3.3 V logic.", "Target"],
-        ["HX711", "DT, SCK", "To be assigned", "Two digital lines. Avoid GPIO0, GPIO2, GPIO15 at boot.", "Target"],
+        ["HC-SR04 presence", "Trig", "D6, GPIO12", "3.3 V drive is accepted.", "Wired"],
+        ["HC-SR04 presence", "Echo", "D7, GPIO13", "5 V output. Divided to 3.33 V with 1k and 2k.", "Wired"],
+        ["HC-SR04 level", "Trig", "D1, GPIO5", "Aimed down into the hopper.", "Wired"],
+        ["HC-SR04 level", "Echo", "D2, GPIO4", "Divided with a second 1k and 2k pair.", "Wired"],
+        ["HX711", "DT", "D0, GPIO16", "Input only pin. No interrupt support is needed.", "Wired"],
+        ["HX711", "SCK", "D3, GPIO0", "Must be high at boot. The board pulls it up.", "Wired"],
+        ["HX711", "VCC", "3V3", "Must not use 5 V. The DT output follows the supply.", "Wired"],
         ["Status LED", "Digital out", "D4, GPIO2", "Bring-up only. Active low on this board.", "Test"],
     ], widths=[2.6, 2.0, 2.9, 6.4, 2.6], size=9)
 

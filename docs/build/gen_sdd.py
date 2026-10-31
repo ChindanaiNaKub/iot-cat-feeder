@@ -58,7 +58,7 @@ def write_body(doc, counter):
         ["State layer", "The `struct Feeder` instance and the functions that read or write it."],
         ["Minute key", "Integer `(day * 100 + hour) * 100 + minute`, used to detect a new minute."],
         ["Flap cycle", "One open command followed by the automatic close."],
-        ["Target feature", "Designed here, implemented only if the parts pass test before 2 November 2026."],
+        ["Parts received", "Hardware on the bench and wired. Firmware integration and acceptance test outstanding."],
     ], widths=[3.4, 13.1])
 
     # ---------------------------------------------------------------- chapter 2
@@ -98,8 +98,8 @@ def write_body(doc, counter):
         ["`checkSchedule`", "Function", "`time`, `Feeder`, `feed`", "Delivered"],
         ["`clockText`, `scheduleText`", "Functions", "`time`, constant table", "Delivered"],
         ["`keepWifi`", "Function", "`WiFi`, `millis`", "Delivered"],
-        ["Presence detector", "Function, target", "Ultrasonic driver, `feed`", "Target"],
-        ["Mass controller", "Function, target", "HX711 driver, `feed`", "Target"],
+        ["Presence detector", "Function", "Ultrasonic driver, `feed`", "Parts received"],
+        ["Mass controller", "Function", "HX711 driver, `feed`", "Parts received"],
     ], widths=[4.0, 4.6, 5.0, 2.9], size=9)
 
     h2(doc, "2.4", "Deployment and Power Design")

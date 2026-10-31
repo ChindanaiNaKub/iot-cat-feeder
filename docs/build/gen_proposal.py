@@ -240,8 +240,8 @@ def write_body(doc, counter):
         ["F1", "Scheduled feeding at 08:00, 13:00, and 18:00 using NTP time", "System clock", "Delivered"],
         ["F2", "On-demand feeding from the web dashboard", "Owner", "Delivered"],
         ["F3", "Flap status, daily count, last meal, and connection quality", "Owner", "Delivered"],
-        ["F4", "Cat presence detection and presence-triggered meal", "Cat", "Target"],
-        ["F5", "Portion control by weight, and hopper level", "System", "Target"],
+        ["F4", "Cat presence detection and presence-triggered meal", "Cat", "Parts received"],
+        ["F5", "Portion control by weight, and hopper level", "System", "Parts received"],
     ], widths=[1.2, 9.3, 3.0, 3.0])
 
     h2(doc, "3.3", "System Architecture")

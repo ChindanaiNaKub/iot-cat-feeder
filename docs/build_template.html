@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>แม่แบบเจาะช่องจ่ายอาหาร 1:1</title>
+<style>
+  @page { size: A4; margin: 10mm; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #e9e3d7;
+    color: #26221d;
+    font-family: "Noto Sans Thai", "Sarabun", system-ui, sans-serif;
+  }
+  .toolbar {
+    max-width: 190mm;
+    margin: 16px auto 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .toolbar p { margin: 0; font-size: 13px; color: #6b635a; }
+  .toolbar button {
+    font: inherit;
+    font-size: 13px;
+    padding: 9px 18px;
+    border: 0;
+    border-radius: 9px;
+    background: #2f6fd0;
+    color: #fff;
+    cursor: pointer;
+  }
+  .sheet {
+    width: 190mm;
+    margin: 0 auto 24px;
+    padding: 6mm;
+    background: #fff;
+    box-shadow: 0 8px 30px rgba(60, 45, 25, 0.18);
+  }
+  h1 { font-size: 15px; margin: 0 0 2px; }
+  .note { font-size: 11px; color: #6b635a; margin: 0 0 6mm; line-height: 1.6; }
+  svg { display: block; width: 100%; height: auto; }
+  svg text { font-family: inherit; }
+  @media print {
+    body { background: #fff; }
+    .toolbar { display: none; }
+    .sheet { width: auto; margin: 0; padding: 0; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <p>พิมพ์ที่ขนาด 100% (ห้ามเลือก Fit to page) แล้ววัดสี่เหลี่ยมทดสอบว่าได้ 50 มม. พอดี</p>
+  <button onclick="print()">พิมพ์</button>
+</div>
+
+<div class="sheet">
+  <h1>แม่แบบเจาะช่องจ่ายอาหาร 1:1</h1>
+  <p class="note">วางกระดาษทาบกับผนังกล่อง ให้เส้นแนวนอนของช่องอยู่สูงจากพื้นกล่อง 3 ซม. แล้วเจาะตามเส้นทึบ</p>
+
+  <svg viewBox="0 0 190 205" xmlns="http://www.w3.org/2000/svg">
+    <!-- calibration square -->
+    <rect x="2" y="2" width="50" height="50" fill="none" stroke="#26221d" stroke-width="0.4"/>
+    <line x1="2" y1="2" x2="52" y2="52" stroke="#c0392b" stroke-width="0.3" stroke-dasharray="2 2"/>
+    <text x="56" y="12" font-size="4" fill="#26221d">สี่เหลี่ยมทดสอบ 50 มม.</text>
+    <text x="56" y="19" font-size="3.4" fill="#6b635a">ถ้าวัดได้ไม่ถึง 50 มม. แปลว่าเครื่องพิมพ์ย่อขนาด</text>
+
+    <!-- hinge centerline -->
+    <line x1="12" y1="76" x2="118" y2="76" stroke="#c0392b" stroke-width="0.4" stroke-dasharray="6 3"/>
+    <text x="12" y="71" font-size="3.2" fill="#c0392b">แนวกึ่งกลางบานพับ = แกน servo</text>
+
+    <!-- opening 60 x 50 -->
+    <rect x="30" y="76" width="60" height="50" fill="none" stroke="#26221d" stroke-width="0.6"/>
+    <text x="34" y="100" font-size="4" fill="#2f6fd0">ช่องจ่าย 60 × 50 มม.</text>
+    <text x="34" y="106" font-size="3.4" fill="#6b635a">ตัดตามเส้นกรอบนี้</text>
+
+    <!-- servo shaft mark -->
+    <circle cx="102" cy="76" r="1.6" fill="#2f6fd0"/>
+    <rect x="102" y="70" width="23" height="12" fill="none" stroke="#2f6fd0" stroke-width="0.4"/>
+    <text x="98" y="90" font-size="3.4" fill="#2f6fd0">ตัว servo 23 × 12 มม.</text>
+    <text x="98" y="95.5" font-size="3.2" fill="#6b635a">จุดน้ำเงิน = แกนหมุน ทากาวที่ฐาน</text>
+
+    <!-- measuring marks -->
+    <line x1="12" y1="126" x2="118" y2="126" stroke="#9a8f7d" stroke-width="0.25" stroke-dasharray="2 2"/>
+    <text x="12" y="131" font-size="3.4" fill="#6b635a">ขอบล่างของช่อง</text>
+
+    <!-- ruler 150 mm -->
+    <line x1="20" y1="165" x2="170" y2="165" stroke="#26221d" stroke-width="0.4"/>
+    <g stroke="#26221d" stroke-width="0.3">
+      <line x1="20" y1="165" x2="20" y2="160"/>
+      <line x1="70" y1="165" x2="70" y2="160"/>
+      <line x1="120" y1="165" x2="120" y2="160"/>
+      <line x1="170" y1="165" x2="170" y2="160"/>
+    </g>
+    <g stroke="#9a8f7d" stroke-width="0.25">
+      <line x1="30" y1="165" x2="30" y2="162"/>
+      <line x1="40" y1="165" x2="40" y2="162"/>
+      <line x1="50" y1="165" x2="50" y2="162"/>
+      <line x1="60" y1="165" x2="60" y2="162"/>
+      <line x1="80" y1="165" x2="80" y2="162"/>
+      <line x1="90" y1="165" x2="90" y2="162"/>
+      <line x1="100" y1="165" x2="100" y2="162"/>
+      <line x1="110" y1="165" x2="110" y2="162"/>
+      <line x1="130" y1="165" x2="130" y2="162"/>
+      <line x1="140" y1="165" x2="140" y2="162"/>
+      <line x1="150" y1="165" x2="150" y2="162"/>
+      <line x1="160" y1="165" x2="160" y2="162"/>
+    </g>
+    <text x="20" y="157" font-size="3.4" fill="#6b635a">ไม้บรรทัดตรวจขนาด 0 ถึง 15 ซม.</text>
+
+    <text x="20" y="180" font-size="3.4" fill="#6b635a">1. แปะกระดาษทาบผนังกล่อง ให้ขอบล่างช่องสูงจากพื้นกล่อง 3 ซม.</text>
+    <text x="20" y="186" font-size="3.4" fill="#6b635a">2. เจาะหรือใช้คัตเตอร์กรีดตามเส้นกรอบช่อง 60 × 50 มม.</text>
+    <text x="20" y="192" font-size="3.4" fill="#6b635a">3. ทำเครื่องหมายจุดศูนย์กลางแกน servo ไว้บนผนัง อย่าเพิ่งเจาะ</text>
+    <text x="20" y="198" font-size="3.4" fill="#6b635a">4. ฝาทำจากกระดาษแข็งหรือพลาสติกที่ใหญ่กว่าช่อง 1 ซม. โดยรอบ</text>
+  </svg>
+</div>
+
+</body>
+</html>

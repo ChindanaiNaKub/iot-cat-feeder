@@ -18,6 +18,7 @@
 <body>
 <h1>ผังการต่อ NodeMCU + Servo SG90 + Powerbank</h1>
 <p class="note">ต่อ GND ร่วมกันทุกจุด · ต่อ capacitor 470 µF คร่อม VIN กับ GND ใกล้ servo</p>
+<p class="note">VIN มีขาเดียวบนบอร์ด: ต่อ VIN ลงราง + (แดง) ของ breadboard แล้วแตกจากรางไป servo และ capacitor · GND ลงราง − (น้ำเงิน/ดำ) ทำแบบเดียวกัน</p>
 
 <svg width="900" height="470" viewBox="0 0 900 470" xmlns="http://www.w3.org/2000/svg">
   <!-- Powerbank -->
@@ -62,16 +63,18 @@
   <rect x="700" y="350" width="70" height="50" rx="6" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
   <text x="735" y="372" text-anchor="middle">470 µF</text>
   <text x="735" y="390" text-anchor="middle" class="small">+ ไป VCC / − ไป GND</text>
-  <text x="620" y="420" class="small">Capacitor ต่อคร่อม servo กันไฟตก (ขั้วบวกต้องต่อด้านแดง)</text>
+  <text x="620" y="420" class="small">Capacitor ต่อคร่อม servo กันไฟตก (ขั้วบวกต้องต่อด้านแดง) วางห่างจากสาย servo 2 ถึง 4 รู</text>
 </svg>
 
 <table>
   <tr><th>จาก</th><th>ไป</th><th>สี/หมายเหตุ</th></tr>
   <tr><td>Powerbank</td><td>NodeMCU</td><td>สาย micro USB</td></tr>
-  <tr><td>NodeMCU VIN</td><td>Servo VCC</td><td>สายแดง</td></tr>
-  <tr><td>NodeMCU GND</td><td>Servo GND</td><td>สายดำ/น้ำตาล</td></tr>
+  <tr><td>NodeMCU VIN</td><td>ราง + (แดง) ของ breadboard</td><td>ต่อจุดเดียว แล้วแตกจากราง</td></tr>
+  <tr><td>NodeMCU GND</td><td>ราง − (น้ำเงิน/ดำ)</td><td>ต่อจุดเดียว แล้วแตกจากราง</td></tr>
+  <tr><td>Servo VCC</td><td>ราง + (แดง)</td><td>สายแดง</td></tr>
+  <tr><td>Servo GND</td><td>ราง − (น้ำเงิน/ดำ)</td><td>สายดำ/น้ำตาล</td></tr>
   <tr><td>NodeMCU D5</td><td>Servo สัญญาณ</td><td>สายส้ม/เหลือง</td></tr>
-  <tr><td>Capacitor 470 µF</td><td>VCC / GND ของ servo</td><td>+ ไปแดง, − ไปดำ</td></tr>
+  <tr><td>Capacitor 470 µF</td><td>คร่อมราง + กับราง − ใกล้ servo</td><td>+ ไปแดง, − ไปดำ</td></tr>
 </table>
 
 <p class="note"><span class="warn">ข้อห้าม:</span> อย่าต่อ servo เข้า 3V3 และอย่าต่อ Capacitor กลับขั้ว</p>

@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cat Feeder v1 — ภาพรวม 3D</title>
+<style>
+  :root {
+    --ink: #2a2622;
+    --muted: #6b635a;
+    --card: rgba(255, 253, 249, 0.94);
+    --line: rgba(42, 38, 34, 0.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    font-family: "Noto Sans Thai", "Sarabun", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: #eae3d6;
+  }
+  canvas { display: block; }
+  #labels { position: absolute; inset: 0; pointer-events: none; }
+
+  .label {
+    font-size: 11px;
+    line-height: 1.35;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid var(--line);
+    color: #3a332c;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(60, 45, 25, 0.12);
+    transform: translateY(-6px);
+  }
+
+  .hud {
+    position: absolute;
+    left: 20px;
+    top: 18px;
+    max-width: 320px;
+    pointer-events: none;
+  }
+  .hud h1 {
+    font-size: 17px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .hud p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  .bar {
+    position: absolute;
+    right: 18px;
+    top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .bar button {
+    font: inherit;
+    font-size: 12.5px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+    cursor: pointer;
+    transition: transform 0.12s ease, background 0.12s ease;
+    box-shadow: 0 2px 10px rgba(60, 45, 25, 0.1);
+  }
+  .bar button:hover { background: #fff; transform: translateY(-1px); }
+  .bar button.primary {
+    background: #2f6fd0;
+    color: #fff;
+    border-color: #2f6fd0;
+  }
+  .bar button.primary:hover { background: #3b7ee3; }
+  .bar button.on { background: #2a2622; color: #fff; border-color: #2a2622; }
+
+  .info {
+    position: absolute;
+    left: 20px;
+    bottom: 18px;
+    width: 320px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    box-shadow: 0 6px 24px rgba(60, 45, 25, 0.12);
+    min-height: 74px;
+  }
+  .info h2 {
+    font-size: 13.5px;
+    margin: 0 0 5px;
+  }
+  .info p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  #loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    gap: 8px;
+    text-align: center;
+    background: #eae3d6;
+    font-size: 13px;
+    color: var(--muted);
+    z-index: 20;
+  }
+  #loading b { color: var(--ink); font-size: 15px; }
+
+  @media (max-width: 640px) {
+    .hud { max-width: 210px; }
+    .hud h1 { font-size: 14px; }
+    .info { width: calc(100% - 40px); }
+  }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<div id="loading"><b>กำลังสร้างภาพ 3D</b><span>ถ้าค้างนาน ตรวจว่าต่ออินเทอร์เน็ตอยู่</span></div>
+
+<div id="labels"></div>
+
+<div class="hud">
+  <h1>เครื่องให้อาหารแมวอัตโนมัติ</h1>
+  <p>ลากเพื่อหมุน · สกรอลล์เพื่อซูม · คลิกที่ชิ้นส่วนเพื่ออ่านคำอธิบาย<br>สัดส่วนโดยประมาณจากของจริง หน่วยเซนติเมตร</p>
+</div>
+
+<div class="bar">
+  <button id="btn-feed" class="primary">ให้อาหาร 1 ครั้ง</button>
+  <button id="btn-labels" class="on">ฉลากชิ้นส่วน</button>
+  <button id="btn-explode">แยกชิ้นส่วน</button>
+  <button id="btn-reset">มุมมองเริ่มต้น</button>
+</div>
+
+<div class="info">
+  <h2 id="info-title">ภาพรวมการประกอบ</h2>
+  <p id="info-body">ถังอาหารวางบนโต๊ะ ช่องจ่ายอาหารอยู่ด้านล่าง servo ยึดติดผนังด้านหน้า และมีแผงวงจรกับ powerbank วางข้างๆ ภายในเครื่องเดียว</p>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+document.getElementById('loading').remove();
+
+// ---------- scene ----------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xeae3d6);
+scene.fog = new THREE.Fog(0xeae3d6, 150, 320);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.5, 700);
+const HOME = new THREE.Vector3(26, 31, 50);
+const TARGET = new THREE.Vector3(-7, 11, 6);
+camera.position.copy(HOME);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+document.body.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(innerWidth, innerHeight);
+labelRenderer.domElement.id = 'labels';
+document.body.appendChild(labelRenderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.copy(TARGET);
+controls.enableDamping = true;
+controls.dampingFactor = 0.07;
+controls.minDistance = 25;
+controls.maxDistance = 190;
+controls.maxPolarAngle = Math.PI * 0.49;
+
+// ---------- lights ----------
+scene.add(new THREE.HemisphereLight(0xffffff, 0x9c8d78, 1.15));
+
+const sun = new THREE.DirectionalLight(0xfff4e2, 2.1);
+sun.position.set(38, 66, 44);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 10;
+sun.shadow.camera.far = 220;
+sun.shadow.camera.left = -60;
+sun.shadow.camera.right = 60;
+sun.shadow.camera.top = 60;
+sun.shadow.camera.bottom = -60;
+sun.shadow.bias = -0.0006;
+scene.add(sun);
+
+const fill = new THREE.DirectionalLight(0xdce9ff, 0.55);
+fill.position.set(-40, 22, -30);
+scene.add(fill);
+
+// ---------- helpers ----------
+const mat = (color, extra = {}) =>
+  new THREE.MeshStandardMaterial({ color, roughness: 0.82, metalness: 0.04, ...extra });
+
+const parts = [];
+
+function box(w, h, d, material) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material.clone());
+  m.castShadow = true;
+  m.receiveShadow = true;
+  return m;
+}
+
+function place(obj, x, y, z) {
+  obj.position.set(x, y, z);
+  return obj;
+}
+
+function describe(obj, name, text) {
+  obj.userData.part = { name, text };
+  parts.push(obj);
+  return obj;
+}
+
+function label(obj, text, y = 0, x = 0, z = 0) {
+  const el = document.createElement('div');
+  el.className = 'label';
+  el.textContent = text;
+  const l = new CSS2DObject(el);
+  l.position.set(x, y, z);
+  obj.add(l);
+  return l;
+}
+
+const labels = [];
+function taggedLabel(obj, text, y, x = 0, z = 0) {
+  const l = label(obj, text, y, x, z);
+  labels.push(l);
+  return l;
+}
+
+// ---------- table ----------
+const table = new THREE.Mesh(new THREE.PlaneGeometry(190, 170), mat(0xe3dacb, { roughness: 0.95 }));
+table.rotation.x = -Math.PI / 2;
+table.receiveShadow = true;
+scene.add(table);
+
+// ---------- container ----------
+const C = { w: 22, d: 22, h: 30, t: 0.35 };
+const cardboard = mat(0xc9a675, { roughness: 0.98 });
+const cardboardIn = mat(0xbf9a6a, { roughness: 0.98 });
+
+const shell = new THREE.Group();
+scene.add(shell);
+
+const back = place(box(C.w, C.h, C.t, cardboard), 0, C.h / 2, -C.d / 2);
+const left = place(box(C.t, C.h, C.d, cardboard), -C.w / 2, C.h / 2, 0);
+const right = place(box(C.t, C.h, C.d, cardboard), C.w / 2, C.h / 2, 0);
+const floor = place(box(C.w, C.t, C.d, cardboardIn), 0, C.t / 2, 0);
+
+// front wall with a chute opening x[-5,5] y[1,7.5]
+const openW = 6, openY0 = 1, openY1 = 7.5;
+const fz = C.d / 2 - C.t / 2;
+const frontLeft = place(box((C.w - openW) / 2, C.h, C.t, cardboard), -(openW / 2 + (C.w - openW) / 4), C.h / 2, fz);
+const frontRight = place(box((C.w - openW) / 2, C.h, C.t, cardboard), openW / 2 + (C.w - openW) / 4, C.h / 2, fz);
+const frontTop = place(box(openW, C.h - openY1, C.t, cardboard), 0, openY1 + (C.h - openY1) / 2, fz);
+const frontLip = place(box(openW, openY0, C.t, cardboard), 0, openY0 / 2, fz);
+shell.add(back, left, right, floor, frontLeft, frontRight, frontTop, frontLip);
+
+// cutaway: see the chute, flap and food through the near walls
+[frontLeft, frontRight, frontTop, frontLip, right].forEach(m => {
+  m.material.transparent = true;
+  m.material.opacity = m === right ? 0.16 : 0.3;
+  m.material.depthWrite = false;
+  m.material.side = THREE.DoubleSide;
+  m.castShadow = false;
+});
+
+function edges(mesh, color = 0x93724a) {
+  const l = new THREE.LineSegments(
+    new THREE.EdgesGeometry(mesh.geometry),
+    new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.5 })
+  );
+  mesh.add(l);
+}
+[back, left, right, floor, frontLeft, frontRight, frontTop, frontLip].forEach(m => edges(m));
+
+describe(back, 'ถังอาหาร', 'กล่องกระดาษแข็งขนาดประมาณ 22 x 22 x 30 ซม. ใส่แมวแห้งได้ราว 500 กรัม ด้านบนเปิดไว้เพื่อเติมอาหาร');
+describe(frontLip, 'ขอบล่างช่องจ่าย', 'ขอบสูง 1 ซม. กันไม่ให้อาหารไหลออกเองตอนฝาปิด');
+
+// inner ramp guiding food to the chute
+const ramp = box(C.w - 1, 0.3, 12, cardboardIn);
+ramp.position.set(0, 6.2, -1.5);
+ramp.rotation.x = -0.42;
+shell.add(ramp);
+describe(ramp, 'รางลาดในถัง', 'เอียงลงมาทางช่องจ่าย เพื่อให้อาหารไหลมารวมที่ปากช่อง ไม่ค้างมุมถัง');
+
+// ---------- flap + servo ----------
+const hingeY = openY1, hingeZ = C.d / 2 + 0.15;
+const flapPivot = new THREE.Group();
+flapPivot.position.set(0, hingeY, hingeZ);
+scene.add(flapPivot);
+
+const flapMat = mat(0xd9b98d, { roughness: 0.95 });
+const flap = box(openW + 0.6, openY1 - openY0, 0.3, flapMat);
+place(flap, 0, -(openY1 - openY0) / 2, 0.18);
+flapPivot.add(flap);
+describe(flap, 'ฝาช่องจ่าย', 'บานพับอยู่ด้านบน เปิดออกด้านนอก 90 องศา ตัวฝาติดกับฮอร์นของ servo โดยตรง');
+
+const hingeRod = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, openW + 1.2, 10), mat(0x9a9a9a, { metalness: 0.6, roughness: 0.4 }));
+hingeRod.rotation.z = Math.PI / 2;
+hingeRod.position.set(0, 0, 0.2);
+flapPivot.add(hingeRod);
+
+const horn = box(0.7, 3.2, 0.22, mat(0xf2f0ec, { roughness: 0.5 }));
+place(horn, 3.1, -1.7, 0.42);
+flapPivot.add(horn);
+describe(horn, 'ฮอร์น servo', 'ปีกขาวที่ขันสกรูยึดกับฝา ทำหน้าที่ส่งแรงหมุนจาก servo ไปที่ฝา');
+
+const servo = new THREE.Group();
+servo.position.set(5.05, hingeY, C.d / 2 + 1.15);
+scene.add(servo);
+
+const servoBody = box(2.4, 2.2, 1.3, mat(0x2f6fd0, { roughness: 0.55 }));
+servo.add(servoBody);
+describe(servoBody, 'servo SG90', 'ยึดติดผนังด้านหน้าขวาของช่อง แกนหมุนต้องอยู่แนวเดียวกับบานพับพอดี ไม่งั้นฝาจะฝืน');
+
+const tabL = place(box(0.5, 1.6, 1.3, mat(0x2f6fd0, { roughness: 0.55 })), -1.35, -0.2, 0);
+const tabR = place(box(0.5, 1.6, 1.3, mat(0x2f6fd0, { roughness: 0.55 })), 1.35, -0.2, 0);
+servo.add(tabL, tabR);
+
+const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.9, 14), mat(0xf4f2ee, { roughness: 0.45 }));
+shaft.rotation.z = Math.PI / 2;
+shaft.position.set(-1.55, 0, 0);
+servo.add(shaft);
+
+const bracket = box(1.4, 0.4, 1.6, mat(0x8a6f47));
+place(bracket, 0, -1.3, 0.1);
+servo.add(bracket);
+
+// ---------- food ----------
+const foodGroup = new THREE.Group();
+scene.add(foodGroup);
+const kibbleMat = mat(0xb5743a, { roughness: 0.9 });
+const kibbleGeo = new THREE.SphereGeometry(0.62, 10, 8);
+for (let i = 0; i < 54; i++) {
+  const k = new THREE.Mesh(kibbleGeo, kibbleMat);
+  const a = Math.random() * Math.PI * 2;
+  const r = Math.sqrt(Math.random()) * 9.3;
+  k.position.set(Math.cos(a) * r, 1.4 + Math.random() * 9.5, Math.sin(a) * r * 0.8 + 0.6);
+  k.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+  k.scale.setScalar(0.75 + Math.random() * 0.5);
+  k.castShadow = true;
+  foodGroup.add(k);
+}
+
+// ---------- bowl ----------
+const bowl = new THREE.Group();
+bowl.position.set(0, 0, 19);
+scene.add(bowl);
+const bowlShell = new THREE.Mesh(new THREE.CylinderGeometry(5.0, 4.1, 2.4, 28, 1, true), mat(0xa9b6c2, { roughness: 0.45, metalness: 0.15, side: THREE.DoubleSide }));
+bowlShell.position.y = 1.2;
+bowlShell.castShadow = true;
+bowlShell.receiveShadow = true;
+const bowlBase = new THREE.Mesh(new THREE.CylinderGeometry(4.1, 4.1, 0.25, 28), mat(0x94a2ae));
+bowlBase.position.y = 0.13;
+const bowlRim = new THREE.Mesh(new THREE.TorusGeometry(5.0, 0.22, 8, 32), mat(0xc3ccd6, { roughness: 0.35, metalness: 0.2 }));
+bowlRim.rotation.x = Math.PI / 2;
+bowlRim.position.y = 2.4;
+bowl.add(bowlShell, bowlBase, bowlRim);
+describe(bowlShell, 'ชามอาหาร', 'วางใต้ช่องจ่าย ระยะห่างพอให้อาหารร่วงลงชามได้ทั้งหมด');
+
+// ---------- electronics ----------
+const rig = new THREE.Group();
+scene.add(rig);
+
+const bbW = 8.3, bbD = 5.5;
+const board = place(box(bbW, 0.85, bbD, mat(0xf1efe9, { roughness: 0.6 })), -16, 0.45, 4.2);
+rig.add(board);
+describe(board, 'breadboard', 'รางแดงคือ 5V จาก VIN และรางน้ำเงินคือ GND ใช้เป็นจุดแจกจ่ายไฟให้ servo');
+
+const railRed = place(box(bbW - 0.7, 0.12, 0.28, mat(0xd94b4b, { roughness: 0.6 })), -16, 0.9, 2.05);
+const railBlue = place(box(bbW - 0.7, 0.12, 0.28, mat(0x3d6fb5, { roughness: 0.6 })), -16, 0.9, 6.35);
+rig.add(railRed, railBlue);
+
+const cap = new THREE.Group();
+cap.position.set(-12.8, 1.35, 6.35);
+rig.add(cap);
+const capBody = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 1.05, 14), mat(0x1f1f22, { roughness: 0.5 }));
+const capTop = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.06, 14), mat(0xcfcfcf, { metalness: 0.7, roughness: 0.3 }));
+capTop.position.y = 0.55;
+cap.add(capBody, capTop);
+describe(capBody, 'capacitor 470 µF', 'ต่อคร่อมรางแดงกับรางน้ำเงิน ใกล้จุดที่สาย servo เข้า กันแรงดันตกตอน servo ออกตัว');
+
+const mcu = place(box(3, 0.35, 5.9, mat(0x1b1b1f, { roughness: 0.55 })), -21.2, 0.7, 4.2);
+rig.add(mcu);
+describe(mcu, 'NodeMCU v3', 'สมองของเครื่อง ต่อ Wi-Fi และรับคำสั่งจากหน้าเว็บ จ่ายไฟผ่านพอร์ต micro USB');
+
+const usbPort = place(box(1.5, 0.7, 1.1, mat(0xb9bcc2, { metalness: 0.7, roughness: 0.3 })), -21.2, 0.7, 7.3);
+rig.add(usbPort);
+
+const bank = place(box(7, 1.7, 13.5, mat(0x2c3340, { roughness: 0.5 })), -21.4, 0.85, 16.5);
+rig.add(bank);
+describe(bank, 'powerbank 5V 2A', 'แหล่งจ่ายหลักที่ใช้จริง พอร์ต USB ของโน้ตบุ๊กจ่ายกระแสไม่พอ servo จึงไม่หมุน');
+
+// ---------- wires ----------
+function wire(points, color, radius = 0.17) {
+  const curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p)));
+  const geo = new THREE.TubeGeometry(curve, 90, radius, 8, false);
+  const mesh = new THREE.Mesh(geo, mat(color, { roughness: 0.45 }));
+  mesh.castShadow = true;
+  return mesh;
+}
+
+const wireBox = new THREE.Group();
+rig.add(wireBox);
+wireBox.add(
+  wire([[5.6, 7.6, 12.2], [8.6, 4.6, 12.6], [4.0, 1.1, 12.8], [-4.0, 0.85, 11.6], [-11.0, 0.95, 5.8], [-12.6, 1.0, 2.05]], 0xd94b4b),
+  wire([[5.7, 7.1, 12.5], [9.0, 4.2, 13.0], [4.2, 0.95, 13.2], [-4.0, 0.7, 12.4], [-11.0, 0.85, 7.2], [-12.6, 1.0, 6.35]], 0x3a2f2a),
+  wire([[5.6, 8.0, 12.7], [8.2, 6.0, 13.4], [2.0, 1.3, 13.6], [-9.0, 1.0, 10.4], [-17.5, 1.05, 7.6], [-19.9, 1.0, 3.6]], 0xe08a2e),
+  wire([[-21.2, 1.0, 7.9], [-21.3, 1.4, 9.2], [-21.4, 1.75, 10.4]], 0x6b6b70, 0.24)
+);
+
+// ---------- labels ----------
+taggedLabel(back, 'ถังอาหาร 22×22×30', 17, 0, 0);
+taggedLabel(flap, 'ฝาช่องจ่าย', 4.2, 0, 0);
+taggedLabel(servoBody, 'servo SG90', 2.6, 0, 0);
+taggedLabel(ramp, 'รางลาดในถัง', 2.2, 0, 3);
+taggedLabel(bowl, 'ชามอาหาร', 4.2, 0, 0);
+taggedLabel(cap, 'capacitor 470 µF', 3.6, 0, 1.6);
+taggedLabel(board, 'breadboard', 2.9, 0, -2.6);
+taggedLabel(mcu, 'NodeMCU v3', 2.4, 0, 0);
+taggedLabel(bank, 'powerbank 2A', 2.2, 0, 0);
+
+// ---------- explode ----------
+const explodeParts = [
+  { obj: back, dir: [0, 0, -7] },
+  { obj: left, dir: [-7, 0, 0] },
+  { obj: right, dir: [7, 0, 0] },
+  { obj: frontLeft, dir: [-2, 0, 5] },
+  { obj: frontRight, dir: [4, 0, 5] },
+  { obj: frontTop, dir: [0, 3, 5] },
+  { obj: frontLip, dir: [0, -1, 5] },
+  { obj: flap, dir: [0, 0, 4] },
+  { obj: servo, dir: [3, 2, 7] },
+  { obj: ramp, dir: [0, 5, 0] },
+  { obj: rig, dir: [-9, 0, 4] },
+];
+const basePos = explodeParts.map(e => e.obj.position.clone());
+let explodeT = 0, explodeTarget = 0;
+
+// ---------- frame the whole build ----------
+const fitBox = new THREE.Box3();
+[shell, flapPivot, servo, rig, bowl].forEach(o => fitBox.expandByObject(o));
+fitBox.getCenter(TARGET);
+const fitRadius = fitBox.getSize(new THREE.Vector3()).length() * 0.5;
+const fitDist = fitRadius / Math.sin(THREE.MathUtils.degToRad(camera.fov * 0.5)) * 0.88;
+HOME.copy(TARGET).addScaledVector(new THREE.Vector3(0.5, 0.45, 1).normalize(), fitDist);
+camera.position.copy(HOME);
+controls.target.copy(TARGET);
+controls.update();
+
+// ---------- interaction ----------
+const ray = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let hovered = null;
+const infoTitle = document.getElementById('info-title');
+const infoBody = document.getElementById('info-body');
+const defaultInfo = [infoTitle.textContent, infoBody.textContent];
+
+function setInfo(part) {
+  if (part) {
+    infoTitle.textContent = part.name;
+    infoBody.textContent = part.text;
+  } else {
+    infoTitle.textContent = defaultInfo[0];
+    infoBody.textContent = defaultInfo[1];
+  }
+}
+
+function clearHover() {
+  if (hovered && hovered.material && hovered.material.emissive) {
+    hovered.material.emissive.setHex(0x000000);
+    hovered.material.emissiveIntensity = 1;
+  }
+  hovered = null;
+  renderer.domElement.style.cursor = 'default';
+}
+
+renderer.domElement.addEventListener('pointermove', (e) => {
+  pointer.x = (e.clientX / innerWidth) * 2 - 1;
+  pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+  ray.setFromCamera(pointer, camera);
+  const hit = ray.intersectObjects(parts, false)[0];
+  const obj = hit ? hit.object : null;
+  if (obj !== hovered) {
+    clearHover();
+    if (obj && obj.material && obj.material.emissive) {
+      obj.material.emissive.setHex(0x2f6fd0);
+      obj.material.emissiveIntensity = 0.32;
+      hovered = obj;
+      renderer.domElement.style.cursor = 'pointer';
+      setInfo(obj.userData.part);
+    } else {
+      setInfo(null);
+    }
+  }
+});
+
+renderer.domElement.addEventListener('pointerleave', () => { clearHover(); setInfo(null); });
+
+renderer.domElement.addEventListener('click', () => {
+  if (hovered) setInfo(hovered.userData.part);
+});
+
+// ---------- buttons ----------
+const btnLabels = document.getElementById('btn-labels');
+btnLabels.addEventListener('click', () => {
+  const on = !labels[0].visible;
+  labels.forEach(l => { l.visible = on; });
+  btnLabels.classList.toggle('on', on);
+});
+
+const btnExplode = document.getElementById('btn-explode');
+btnExplode.addEventListener('click', () => {
+  explodeTarget = explodeTarget ? 0 : 1;
+  btnExplode.classList.toggle('on', explodeTarget === 1);
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  camera.position.copy(HOME);
+  controls.target.copy(TARGET);
+  controls.update();
+});
+
+// ---------- feeding animation ----------
+let feedT = -1;
+const falling = [];
+const dropGeo = new THREE.SphereGeometry(0.55, 9, 7);
+
+document.getElementById('btn-feed').addEventListener('click', () => {
+  if (feedT < 0) feedT = 0;
+});
+
+function feedCurve(t) {
+  if (t < 0.7) return t / 0.7;
+  if (t < 1.9) return 1;
+  if (t < 2.6) return 1 - (t - 1.9) / 0.7;
+  return 0;
+}
+
+function dropKibble() {
+  for (let i = 0; i < 5; i++) {
+    const m = new THREE.Mesh(dropGeo, kibbleMat);
+    m.castShadow = true;
+    m.scale.setScalar(0.8 + Math.random() * 0.4);
+    m.position.set((Math.random() - 0.5) * 6, 4.6 + Math.random() * 1.6, 11.8);
+    foodGroup.add(m);
+    falling.push({
+      mesh: m,
+      vel: new THREE.Vector3((Math.random() - 0.5) * 4, -2, 18 + Math.random() * 8),
+      life: 0,
+    });
+  }
+}
+
+// ---------- loop ----------
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+
+  if (explodeT !== explodeTarget) {
+    explodeT += Math.sign(explodeTarget - explodeT) * dt * 1.6;
+    explodeT = THREE.MathUtils.clamp(explodeT, 0, 1);
+    const k = explodeT * explodeT * (3 - 2 * explodeT);
+    explodeParts.forEach((e, i) => {
+      e.obj.position.set(
+        basePos[i].x + e.dir[0] * k,
+        basePos[i].y + e.dir[1] * k,
+        basePos[i].z + e.dir[2] * k
+      );
+    });
+  }
+
+  if (feedT >= 0) {
+    feedT += dt;
+    flapPivot.rotation.x = -Math.PI / 2 * feedCurve(feedT);
+    if (feedT > 0.75 && feedT < 0.8) dropKibble();
+    if (feedT > 3.2) { feedT = -1; flapPivot.rotation.x = 0; }
+  }
+
+  for (let i = falling.length - 1; i >= 0; i--) {
+    const f = falling[i];
+    f.life += dt;
+    f.vel.y -= 62 * dt;
+    f.mesh.position.addScaledVector(f.vel, dt);
+    f.mesh.rotation.x += dt * 4;
+    if (f.mesh.position.y < 1.4 || f.life > 3) {
+      foodGroup.remove(f.mesh);
+      falling.splice(i, 1);
+    }
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+}
+
+animate();
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  labelRenderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>
