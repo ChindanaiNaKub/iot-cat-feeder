@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IoT Cat Feeder · แบบแยกชิ้น 3D</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23c9a97c'/%3E%3Ccircle cx='16' cy='18' r='7' fill='%23fffdfa'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --ink: #1c1a17;
+    --muted: #6f675e;
+    --line: rgba(28, 26, 23, .12);
+    --paper: #f6f2ec;
+    --card: #fffdfa;
+    --accent: #2f6fd0;
+    --have: #1d7a52;
+    --planned: #a8621a;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+    overflow: hidden;
+  }
+  #stage { position: fixed; inset: 0; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+  .panel {
+    position: fixed;
+    background: color-mix(in srgb, var(--card) 92%, transparent);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: 0 10px 30px rgba(40, 30, 20, .09);
+  }
+
+  #navToggle {
+    position: fixed; top: 16px; left: 16px; z-index: 30;
+    width: 42px; height: 42px; border-radius: 12px;
+    border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    font-size: 17px; cursor: pointer; display: none; place-items: center;
+  }
+  #left {
+    top: 16px; left: 16px;
+    width: 272px;
+    max-height: calc(100% - 32px);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  #left header { padding: 16px 18px 12px; border-bottom: 1px solid var(--line); }
+  #left h1 { margin: 0 0 2px; font-size: 16px; letter-spacing: -.01em; }
+  #left p { margin: 0; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+  #scroll { overflow-y: auto; padding: 8px 10px 12px; }
+
+  .stepbtn {
+    display: flex; gap: 10px; align-items: flex-start;
+    width: 100%; text-align: left; border: 0; background: transparent;
+    padding: 9px 10px; border-radius: 10px; cursor: pointer;
+    font: inherit; color: inherit;
+  }
+  .stepbtn:hover { background: rgba(47, 111, 208, .07); }
+  .stepbtn.on { background: rgba(47, 111, 208, .12); }
+  .stepbtn .num {
+    flex: 0 0 20px; height: 20px; border-radius: 50%;
+    background: var(--ink); color: #fff; font-size: 11px;
+    display: grid; place-items: center; margin-top: 1px;
+  }
+  .stepbtn.on .num { background: var(--accent); }
+  .stepbtn .txt { font-size: 12.5px; line-height: 1.45; }
+
+  .subhead {
+    font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); padding: 14px 10px 6px;
+  }
+  .part {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    border: 0; background: transparent; padding: 6px 10px;
+    border-radius: 8px; cursor: pointer; font: inherit; color: inherit;
+    text-align: left; font-size: 12px;
+  }
+  .part:hover { background: rgba(28, 26, 23, .05); }
+  .part.on { background: rgba(47, 111, 208, .13); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+  .dot.have { background: var(--have); }
+  .dot.planned { background: var(--planned); }
+
+  #right {
+    top: 16px; right: 16px; width: 300px;
+    max-height: calc(100% - 120px);
+    overflow-y: auto; padding: 16px 18px 18px;
+  }
+  #right h2 { margin: 0 0 2px; font-size: 14.5px; }
+  #right .en { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+  #right dl { margin: 0; }
+  #right dt {
+    font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--muted); margin-top: 12px;
+  }
+  #right dd { margin: 3px 0 0; font-size: 12px; line-height: 1.6; }
+  .tag {
+    display: inline-block; font-size: 10.5px; padding: 2px 8px;
+    border-radius: 999px; margin-bottom: 10px;
+  }
+  .tag.have { background: rgba(29, 122, 82, .13); color: var(--have); }
+  .tag.planned { background: rgba(168, 98, 26, .14); color: var(--planned); }
+
+  #hud {
+    left: 50%; transform: translateX(-50%);
+    bottom: 16px; padding: 12px 18px;
+    display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
+    max-width: calc(100% - 32px);
+  }
+  .ctl { display: flex; flex-direction: column; gap: 4px; }
+  .ctl label { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  input[type=range] { width: 190px; accent-color: var(--accent); }
+  .chips { display: flex; gap: 6px; }
+  .chip {
+    border: 1px solid var(--line); background: #fff; border-radius: 999px;
+    padding: 5px 11px; font: inherit; font-size: 11.5px; cursor: pointer; color: var(--ink);
+  }
+  .chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .hint { font-size: 11px; color: var(--muted); }
+
+  @media (max-width: 1080px) {
+    #navToggle { display: grid; }
+    #left { top: 68px; left: 12px; width: min(300px, calc(100% - 24px)); max-height: 46%; }
+    body.nav-closed #left { display: none; }
+    #right { top: 68px; right: 12px; width: min(264px, calc(100% - 24px)); max-height: 38%; }
+    #hud { padding: 10px 14px; gap: 10px; }
+    input[type=range] { width: 140px; }
+  }
+  @media (max-width: 720px) {
+    #right { display: none; }
+    #hud { flex-direction: column; align-items: stretch; gap: 8px; }
+    input[type=range] { width: 100%; }
+    .hint { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<button id="navToggle" title="เปิดรายการขั้นตอน">☰</button>
+
+<div id="left" class="panel">
+  <header>
+    <h1>ขั้นประกอบ</h1>
+    <p>กดขั้นเพื่อดูว่าชิ้นไหนเข้าตำแหน่งไหน แล้วหมุนดูรอบๆ</p>
+  </header>
+  <div id="scroll">
+    <div id="steps"></div>
+    <div class="subhead">ชิ้นส่วนทั้งหมด</div>
+    <div id="parts"></div>
+  </div>
+</div>
+
+<div id="right" class="panel">
+  <h2 id="selName">เลือกชิ้นส่วน</h2>
+  <div class="en" id="selEn">คลิกที่ชิ้นส่วนในโมเดลหรือในรายการ</div>
+  <dl id="selBody"></dl>
+</div>
+
+<div id="hud" class="panel">
+  <div class="ctl">
+    <label for="explode">แยกชิ้น</label>
+    <input id="explode" type="range" min="0" max="100" value="0">
+  </div>
+  <div class="ctl">
+    <label>มุมมอง</label>
+    <div class="chips" id="views"></div>
+  </div>
+  <div class="hint">ลากเพื่อหมุน · สกรอลล์เพื่อซูม · คลิกชิ้นส่วนเพื่อดูรายละเอียด</div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/addons/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/OrbitControls.js';
+
+const C = {
+  cardboard: 0xc9a97c,
+  cardboardEdge: 0x9d7f54,
+  plastic: 0xe9e6df,
+  hopper: 0xdfe5e8,
+  pcb: 0x1f5f3c,
+  metal: 0x9aa3ad,
+  servo: 0x2f6fd0,
+  servoDark: 0x224f96,
+  wire: 0xc0473f,
+  bowl: 0xf4f1e8,
+  sensor: 0x2c6fbb,
+  power: 0x3a3a3f,
+  cap: 0x3b4a63,
+};
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf6f2ec);
+scene.fog = new THREE.Fog(0xf6f2ec, 120, 210);
+
+const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.5, 400);
+camera.position.set(62, 52, 84);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+document.getElementById('stage').appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 19, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 28;
+controls.maxDistance = 150;
+controls.maxPolarAngle = Math.PI * 0.52;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0xcdbfae, 1.5));
+const key = new THREE.DirectionalLight(0xffffff, 2.1);
+key.position.set(38, 62, 34);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.camera.left = -60;
+key.shadow.camera.right = 60;
+key.shadow.camera.top = 70;
+key.shadow.camera.bottom = -20;
+key.shadow.camera.near = 10;
+key.shadow.camera.far = 180;
+key.shadow.bias = -0.0008;
+scene.add(key);
+const fill = new THREE.DirectionalLight(0xdfe8ff, 0.55);
+fill.position.set(-40, 30, -30);
+scene.add(fill);
+
+const floor = new THREE.Mesh(
+  new THREE.CircleGeometry(90, 64).rotateX(-Math.PI / 2),
+  new THREE.MeshStandardMaterial({ color: 0xefe9df, roughness: 1 })
+);
+floor.receiveShadow = true;
+floor.position.y = -0.02;
+scene.add(floor);
+
+const grid = new THREE.GridHelper(120, 40, 0xd8d0c4, 0xe3dcd1);
+grid.position.y = 0;
+scene.add(grid);
+
+// ---------------------------------------------------------------- materials
+function mat(color, opts = {}) {
+  return new THREE.MeshStandardMaterial({
+    color, roughness: opts.rough ?? 0.75, metalness: opts.metal ?? 0.05,
+    transparent: opts.opacity !== undefined, opacity: opts.opacity ?? 1,
+    flatShading: false,
+  });
+}
+const M = {
+  cardboard: mat(C.cardboard, { rough: 0.92 }),
+  cardboardDark: mat(C.cardboardEdge, { rough: 0.95 }),
+  plastic: mat(C.plastic, { rough: 0.55 }),
+  hopper: mat(C.hopper, { rough: 0.4, metal: 0.02, opacity: 0.92 }),
+  pcb: mat(C.pcb, { rough: 0.6 }),
+  metal: mat(C.metal, { rough: 0.35, metal: 0.75 }),
+  servo: mat(C.servo, { rough: 0.45 }),
+  servoDark: mat(C.servoDark, { rough: 0.5 }),
+  wire: mat(C.wire, { rough: 0.6 }),
+  bowl: mat(C.bowl, { rough: 0.35 }),
+  sensor: mat(C.sensor, { rough: 0.5 }),
+  power: mat(C.power, { rough: 0.5 }),
+  cap: mat(C.cap, { rough: 0.45 }),
+};
+
+// ---------------------------------------------------------------- geometry helpers
+function box(w, h, d, material, x = 0, y = 0, z = 0) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+  m.position.set(x, y, z);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  return m;
+}
+function cyl(r, h, material, x = 0, y = 0, z = 0, segments = 24) {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, segments), material);
+  m.position.set(x, y, z);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  return m;
+}
+function tube(points, radius, material) {
+  const curve = new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p)));
+  const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 42, radius, 8, false), material);
+  m.castShadow = true;
+  return m;
+}
+
+// ---------------------------------------------------------------- parts
+// status: 'have' = on the bench, 'planned' = ordered or still to buy
+const PARTS = [
+  {
+    id: 'base', group: 'structure', name: 'ฐานกระดาษลัง', en: 'Base plate',
+    status: 'have', explode: [0, -9, 0], pos: [0, 0.8, 0],
+    note: 'แผ่นลังหนาสองชั้น ขนาดประมาณ 24 x 18 ซม. เป็นตัวรับน้ำหนักทั้งหมด',
+    build: () => box(24, 1.6, 18, M.cardboard),
+    make: 'ตัดลังสองชั้นประกบกัน กันล้มง่าย',
+  },
+  {
+    id: 'sideL', group: 'structure', name: 'ผนังข้างซ้าย', en: 'Left side wall',
+    status: 'have', explode: [-16, 0, 0], pos: [-11.3, 14, 0],
+    note: 'ผนังสูง 26 ซม. ยึดฐานกับถังอาหาร ด้านในติดบอร์ดกับถัง',
+    build: () => box(1.6, 26, 18, M.cardboard),
+    make: ' glued ตั้งฉากกับฐาน',
+  },
+  {
+    id: 'sideR', group: 'structure', name: 'ผนังข้างขวา', en: 'Right side wall',
+    status: 'have', explode: [16, 0, 0], pos: [11.3, 14, 0],
+    note: 'ด้านนี้ติด servo เพราะใกล้บานพับที่สุด ลดการงอของก้านโยง',
+    build: () => box(1.6, 26, 18, M.cardboard),
+    make: 'ติด servo ที่ผนังนี้',
+  },
+  {
+    id: 'back', group: 'structure', name: 'ผนังหลัง', en: 'Back wall',
+    status: 'have', explode: [0, 0, -14], pos: [0, 14, -8.3],
+    note: 'ปิดด้านหลัง กันลมและกันแมวเอื้อมเข้าไป เข้าไปติดบอร์ดไม่ได้เพราะร้อน',
+    build: () => box(24, 26, 1.6, M.cardboard),
+    make: 'ติดบอร์ดไว้ด้านใน',
+  },
+  {
+    id: 'hopper', group: 'structure', name: 'ถังอาหาร', en: 'Hopper',
+    status: 'have', explode: [0, 13, 0], pos: [0, 33, -1],
+    note: 'ใช้กล่องพลาสติกหรือขวดน้ำตัดก้น ไม่ใช้ลัง เพราะเศษอาหารจะติดร่อง',
+    build: () => {
+      const g = new THREE.Group();
+      g.add(box(16, 11, 12, M.hopper, 0, 0, 0));
+      const lip = box(16.6, 0.6, 12.6, M.plastic, 0, 5.5, 0);
+      g.add(lip);
+      return g;
+    },
+    make: 'ต้องเห็นระดับอาหารได้ ถ้าใช้ขวดใสจะดีมาก',
+  },
+  {
+    id: 'chute', group: 'structure', name: 'ท่อทางลง', en: 'Chute',
+    status: 'have', explode: [0, 7, 5], pos: [0, 22.5, 4],
+    note: 'ท่อสี่เหลี่ยมจากก้นถังลงมาถึงฝา ให้อาหารไหลลงจุดเดียว',
+    build: () => box(6, 9, 6, M.cardboard),
+    make: 'กาวให้สนิท กันอาหารรั่วออกด้านข้าง',
+  },
+  {
+    id: 'flap', group: 'actuator', name: 'ฝาเปิดปิด', en: 'Flap',
+    status: 'have', explode: [0, -4, 14], pos: [0, 18, 4],
+    note: 'บานพับที่ขอบหลัง เปิดลงด้านล่าง อาหารจึงไหลออกตามแรงโน้มถ่วง',
+    build: () => box(7.4, 0.5, 7.4, M.cardboardDark),
+    make: 'ปิดสนิทแต่ไม่ฝืด ลองขยับด้วยมือก่อนต่อ servo',
+  },
+  {
+    id: 'hinge', group: 'actuator', name: 'บานพับ', en: 'Hinge pin',
+    status: 'have', explode: [0, -4, 17], pos: [0, 18.2, 7.4],
+    note: 'แกนหมุนของฝา ต้องขนานกับแกนหมุนของ servo ไม่งั้น servo จะฝืน',
+    build: () => {
+      const g = new THREE.Group();
+      const axle = cyl(0.35, 7.6, M.metal, 0, 0, 0, 16);
+      axle.rotation.z = Math.PI / 2;
+      g.add(axle);
+      return g;
+    },
+    make: 'ใช้ไม้เสียบหรือลวดแข็งแทนได้',
+  },
+  {
+    id: 'servo', group: 'actuator', name: 'Servo SG90', en: 'Servo motor',
+    status: 'have', explode: [13, 3, 3], pos: [8.4, 20, 4],
+    note: 'หมุนประมาณ 95 องศาจริง บอร์ดสั่ง 180 ก็จะชน ต้องตั้งค่า OPEN_DEG ตามที่วัดได้',
+    build: () => {
+      const g = new THREE.Group();
+      g.add(box(3.2, 2.4, 2.6, M.servo));
+      const capTop = box(3.4, 0.5, 1.0, M.servoDark, 0, 1.4, -0.3);
+      g.add(capTop);
+      const horn = cyl(0.7, 0.4, M.plastic, 0, 1.7, 0.4, 16);
+      g.add(horn);
+      const arm = box(0.5, 0.3, 2.2, M.plastic, 0, 1.75, 1.2);
+      g.add(arm);
+      return g;
+    },
+    make: 'ยึดด้วยกาวร้อนสองจุด อย่าให้ตัว servo ขยับได้',
+  },
+  {
+    id: 'stick', group: 'actuator', name: 'ก้านโยงไม้ไอติม', en: 'Linkage arm',
+    status: 'have', explode: [12, 9, 9], pos: [5.4, 19.6, 6.2],
+    note: 'ส่งแรงจาก servo ไปที่ฝา ยาว 4 ถึง 5 ซม. ปลายฝั่งฝาใช้ลวดเสียบเป็นสลัก ไม่กาวติด',
+    build: () => box(0.7, 0.35, 4.6, M.cardboardDark),
+    make: 'ต้องหมุนได้รอบจุดยึด ไม่ใช่ติดตาย',
+  },
+  {
+    id: 'nodemcu', group: 'electronics', name: 'NodeMCU v3', en: 'ESP8266 board',
+    status: 'have', explode: [-16, 8, -12], pos: [-6.6, 21, -7],
+    note: 'สมองของเครื่อง ให้บริการหน้าเว็บและสั่ง servo ขา D5 ต่อสัญญาณ servo',
+    build: () => {
+      const g = new THREE.Group();
+      g.add(box(5.6, 0.7, 2.6, M.pcb));
+      g.add(box(1.6, 0.4, 1.0, M.metal, 1.4, 0.55, 0));
+      for (let i = 0; i < 8; i++) {
+        g.add(box(0.35, 0.5, 0.35, M.metal, -2.4 + i * 0.7, 0.5, -1.0));
+        g.add(box(0.35, 0.5, 0.35, M.metal, -2.4 + i * 0.7, 0.5, 1.0));
+      }
+      return g;
+    },
+    make: 'USB หันออกด้านหลังเพื่ออัปโหลดโค้ดได้โดยไม่ต้องรื้อ',
+  },
+  {
+    id: 'breadboard', group: 'electronics', name: 'เบรดบอร์ด', en: 'Breadboard',
+    status: 'have', explode: [-8, -5, -15], pos: [-4.5, 3.2, -5],
+    note: 'ต่อสายจ่ายไฟและกราวด์ร่วม ใช้เป็นจุดพักสายก่อนบัดกรี',
+    build: () => {
+      const g = new THREE.Group();
+      g.add(box(8, 0.9, 5, M.plastic));
+      for (let r = 0; r < 3; r++)
+        for (let i = 0; i < 9; i++)
+          g.add(box(0.16, 0.1, 0.16, M.power, -3.2 + i * 0.8, 0.5, -1.4 + r * 1.4));
+      return g;
+    },
+    make: 'ติดเทปสองหน้าไว้กับฐาน',
+  },
+  {
+    id: 'capacitor', group: 'electronics', name: 'Capacitor 470 µF', en: 'Bulk capacitor',
+    status: 'have', explode: [15, 6, -2], pos: [7.6, 19.2, 1.4],
+    note: 'ตัวที่กันบอร์ดรีบูตตอน servo กระชากกระแส ต้องต่อใกล้ servo ที่สุด',
+    build: () => {
+      const g = new THREE.Group();
+      g.add(cyl(0.85, 2.2, M.cap));
+      g.add(cyl(0.85, 0.15, M.metal, 0, 1.15, 0));
+      return g;
+    },
+    make: 'ขั้วลบเดินลายเส้นสีขาว ระวังกลับขั้ว',
+  },
+  {
+    id: 'powerbank', group: 'electronics', name: 'Powerbank 5V 2A', en: 'Power bank',
+    status: 'have', explode: [0, -7, -19], pos: [0, 3.4, -4],
+    note: 'ต้องจ่าย 2A ขึ้นไป พอร์ต USB ของโน้ตบุ๊กจ่ายไม่พอ servo จะทำให้บอร์ดรีบูต',
+    build: () => {
+      const g = new THREE.Group();
+      g.add(box(14, 2.2, 7, M.power));
+      g.add(box(2.2, 0.8, 1.2, M.metal, 5.6, 0.2, 0));
+      return g;
+    },
+    make: 'วางไว้ในฐาน สายออกด้านหลัง',
+  },
+  {
+    id: 'wires', group: 'electronics', name: 'สายไฟ', en: 'Wiring',
+    status: 'have', explode: [-5, -3, -9], pos: [0, 0, 0],
+    note: 'servo ใช้สามเส้น สัญญาณ D5, บวกเข้า VIN, กราวด์ร่วมกับบอร์ดและ powerbank',
+    build: () => {
+      const g = new THREE.Group();
+      g.add(tube([[7.4, 20.6, 3.2], [4, 21, -2], [0, 20, -5], [-4, 21, -6.4]], 0.16, M.wire));
+      g.add(tube([[-6.6, 20.4, -6], [-5, 12, -6], [-4.5, 4.2, -5]], 0.16, M.cap));
+      g.add(tube([[7.4, 19.4, 2.4], [8.2, 12, 0], [4, 4, -3.6]], 0.16, M.power));
+      return g;
+    },
+    make: 'รวบด้วยเคเบิลไทร์ อย่าให้สายไปขวางทางอาหาร',
+  },
+  {
+    id: 'presence', group: 'sensors', name: 'Ultrasonic ตรวจจับแมว', en: 'Presence sensor',
+    status: 'planned', explode: [7, -2, 18], pos: [8.6, 15, 8.2],
+    note: 'ยิงออกด้านหน้า ตรวจว่าแมวเข้ามาในระยะ 60 ซม. ใช้ยืนยันสามครั้งติดกันก่อนให้อาหาร',
+    build: () => {
+      const g = new THREE.Group();
+      g.add(box(4.4, 1.8, 1.4, M.pcb));
+      const eyeL = cyl(0.75, 1.1, M.sensor, -1.2, 0, 0.6, 18);
+      eyeL.rotation.x = Math.PI / 2;
+      const eyeR = cyl(0.75, 1.1, M.sensor, 1.2, 0, 0.6, 18);
+      eyeR.rotation.x = Math.PI / 2;
+      g.add(eyeL, eyeR);
+      return g;
+    },
+    make: 'ขา ECHO จ่าย 5V ต้องมีตัวแบ่ง 1k กับ 2k ก่อนเข้าบอร์ด',
+  },
+  {
+    id: 'level', group: 'sensors', name: 'Ultrasonic วัดระดับอาหาร', en: 'Level sensor',
+    status: 'planned', explode: [0, 20, -6], pos: [0, 38.6, -1],
+    note: 'ยิงลงไปหาผิวอาหารในถัง วัดระยะแล้วเทียบกับความลึกที่ตั้งไว้',
+    build: () => {
+      const g = new THREE.Group();
+      g.add(box(4.4, 1.4, 1.8, M.pcb));
+      const eyeL = cyl(0.75, 0.9, M.sensor, -1.2, -0.7, 0, 18);
+      const eyeR = cyl(0.75, 0.9, M.sensor, 1.2, -0.7, 0, 18);
+      g.add(eyeL, eyeR);
+      return g;
+    },
+    make: 'เงยขึ้นบนถัง อย่าให้ฝาถังบังลำคลื่น',
+  },
+  {
+    id: 'loadcell', group: 'sensors', name: 'Load cell + HX711', en: 'Weight sensor',
+    status: 'planned', explode: [0, -6, 18], pos: [0, 2.6, 6.4],
+    note: 'วางใต้ถ้วย ชั่งน้ำหนักอาหารที่ไหลออกมา แล้วปิดฝาเมื่อได้ตามเป้า 20 กรัม',
+    build: () => {
+      const g = new THREE.Group();
+      g.add(box(8, 0.5, 1.4, M.metal));
+      g.add(box(3, 0.6, 2.4, M.pcb, 0, -0.1, 0));
+      return g;
+    },
+    make: 'แท่นต้องแข็ง ลังที่งอจะทำให้ค่าวัยวาย',
+  },
+  {
+    id: 'bowl', group: 'structure', name: 'ถ้วยอาหาร', en: 'Bowl',
+    status: 'have', explode: [0, -4, 15], pos: [0, 4.2, 6.4],
+    note: 'รับอาหารที่ตกลงมา ก้นกว้างและเรียบ เพราะต้องวางบนโหลดเซลล์',
+    build: () => {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(5.6, 4.6, 3.2, 40, 1, true),
+        M.bowl
+      );
+      body.material.side = THREE.DoubleSide;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      g.add(body);
+      g.add(cyl(4.6, 0.35, M.bowl, 0, -1.6, 0, 40));
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(5.6, 0.22, 10, 40), M.bowl);
+      rim.rotation.x = Math.PI / 2;
+      rim.position.y = 1.6;
+      g.add(rim);
+      return g;
+    },
+    make: 'ขนาด 11 ซม. พอสำหรับหนึ่งมื้อ',
+  },
+];
+
+const STEPS = [
+  { n: 1, title: 'ประกอบฐานกับผนังทั้งสามด้าน', parts: ['base', 'sideL', 'sideR', 'back'],
+    body: 'วางผนังให้ตั้งฉากกับฐาน ใช้ไม้ฉากหรือกล่องเป็นตัวช่วยตั้งฉากก่อนทากาว รอให้แห้งสนิทแล้วลองบิดดูว่าล้มง่ายไหม' },
+  { n: 2, title: 'ทำถังอาหารกับท่อทางลง', parts: ['hopper', 'chute'],
+    body: 'ตัดก้นกล่องพลาสติกให้เป็นช่องขนาด 6 ซม. แล้วกาวท่อลังต่อลงมา ทดสอบด้วยอาหารแห้งก่อนปิดฝา อาหารต้องไหลได้ไม่ติด' },
+  { n: 3, title: 'ติดฝากับบานพับ', parts: ['flap', 'hinge'],
+    body: 'เจาะรูลวดที่ขอบฝา ยึดให้หมุนได้ลื่นด้วยมือ ยังไม่ต้องต่อ servo ฝาต้องปิดสนิทและเปิดได้เองด้วยน้ำหนัก' },
+  { n: 4, title: 'ยึด servo กับก้านโยง', parts: ['servo', 'stick'],
+    body: 'ตั้ง servo ที่มุมกลางก่อน ติดก้านไม้ไอติมเข้าที่แขน servo แล้วใช้ลวดเสียบฝั่งฝา ลองขยับด้วยมือให้สุดทั้งสองทาง' },
+  { n: 5, title: 'ต่อวงจรและจ่ายไฟ', parts: ['nodemcu', 'breadboard', 'capacitor', 'powerbank', 'wires'],
+    body: 'servo สัญญาณเข้า D5 บวกรวมที่ VIN กราวด์ร่วมทุกจุด ใส่ capacitor คร่อม V5 กับ GND ใกล้ servo แล้วรัน servo_test.ino' },
+  { n: 6, title: 'เพิ่มเซ็นเซอร์ตรวจจับแมว', parts: ['presence'],
+    body: 'หันออกด้านหน้าให้สูงจากพื้นพอดีตัวแมว ต่อ ECHO ผ่านตัวแบ่งแรงดันก่อนเข้าบอร์ด แล้วทดสอบนับระยะด้วย Serial Monitor' },
+  { n: 7, title: 'วางถ้วยและโหลดเซลล์', parts: ['loadcell', 'bowl'],
+    body: 'ยึดโหลดเซลล์กับฐานให้แน่น วางถ้วยบนแท่น ชั่งน้ำหนักก่อนใส่ HX711 แล้วทดสอบค่าวัยวายข้ามชั่วโมง' },
+];
+
+const PART_MAP = new Map(PARTS.map(p => [p.id, p]));
+const GROUP_LABEL = {
+  structure: 'โครงสร้าง',
+  actuator: 'ชุดเปิดปิด',
+  electronics: 'วงจร',
+  sensors: 'เซ็นเซอร์',
+};
+
+// ---------------------------------------------------------------- build scene
+const root = new THREE.Group();
+scene.add(root);
+const meshes = new Map();
+
+for (const part of PARTS) {
+  const g = new THREE.Group();
+  const body = part.build();
+  g.add(body);
+  g.position.set(...part.pos);
+  g.userData.partId = part.id;
+  g.userData.base = new THREE.Vector3(...part.pos);
+  g.userData.explode = new THREE.Vector3(...part.explode);
+  g.userData.target = new THREE.Vector3(...part.pos);
+  g.traverse(o => {
+    if (!o.isMesh) return;
+    o.userData.partId = part.id;
+    o.material = o.material.clone();
+    const edge = new THREE.LineSegments(
+      new THREE.EdgesGeometry(o.geometry, 32),
+      new THREE.LineBasicMaterial({ color: 0x8b7a5f, transparent: true, opacity: 0.35 })
+    );
+    edge.userData.partId = part.id;
+    edge.userData.isEdge = true;
+    o.add(edge);
+  });
+  root.add(g);
+  meshes.set(part.id, g);
+
+  g.traverse(o => {
+    if (!o.isMesh) return;
+    o.userData.baseOpacity = part.status === 'planned' ? 0.42 : 1;
+    o.material.transparent = part.status === 'planned';
+    o.material.opacity = o.userData.baseOpacity;
+    o.material.depthWrite = part.status !== 'planned';
+  });
+}
+
+// ---------------------------------------------------------------- selection
+let selected = null;
+let hovered = null;
+let activeStep = null;
+
+const ray = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+
+function pick(event) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  ray.setFromCamera(pointer, camera);
+  const hits = ray.intersectObjects(root.children, true);
+  if (!hits.length) return null;
+  return hits[0].object.userData.partId ?? null;
+}
+
+function setEmissive(partId, value) {
+  const g = meshes.get(partId);
+  if (!g) return;
+  g.traverse(o => {
+    if (!o.isMesh) return;
+    o.material.emissive.setHex(value);
+    o.material.emissiveIntensity = value === 0 ? 0 : 0.55;
+  });
+}
+
+renderer.domElement.addEventListener('pointerdown', e => {
+  const id = pick(e);
+  select(id);
+});
+
+renderer.domElement.addEventListener('pointermove', e => {
+  const id = pick(e);
+  if (id === hovered) return;
+  if (hovered) setEmissive(hovered, 0x000000);
+  hovered = id;
+  if (hovered && hovered !== selected) setEmissive(hovered, 0x2f6fd0);
+  renderer.domElement.style.cursor = id ? 'pointer' : 'grab';
+});
+
+function select(id) {
+  if (selected && selected !== id) setEmissive(selected, 0x000000);
+  selected = id;
+  if (selected) setEmissive(selected, 0x3d7fe0);
+  renderInfo(id);
+  document.querySelectorAll('.part').forEach(el => {
+    el.classList.toggle('on', el.dataset.id === id);
+  });
+}
+
+const $ = s => document.querySelector(s);
+
+if (innerWidth < 1080) document.body.classList.add('nav-closed');
+$('#navToggle').onclick = () => document.body.classList.toggle('nav-closed');
+
+function renderInfo(id) {
+  const part = PART_MAP.get(id);
+  if (!part) {
+    $('#selName').textContent = 'เลือกชิ้นส่วน';
+    $('#selEn').textContent = 'คลิกที่ชิ้นส่วนในโมเดลหรือในรายการ';
+    $('#selBody').innerHTML = '';
+    return;
+  }
+  $('#selName').textContent = part.name;
+  $('#selEn').textContent = part.en;
+  const status = part.status === 'have'
+    ? '<span class="tag have">มีแล้ว</span>'
+    : '<span class="tag planned">ยังไม่ได้ซื้อ</span>';
+  $('#selBody').innerHTML = `
+    ${status}
+    <dt>ทำหน้าที่อะไร</dt><dd>${part.note}</dd>
+    <dt>วิธีประกอบ</dt><dd>${part.make}</dd>
+  `;
+}
+
+// ---------------------------------------------------------------- panels
+const partsEl = $('#parts');
+const groups = ['structure', 'actuator', 'electronics', 'sensors'];
+for (const gid of groups) {
+  const head = document.createElement('div');
+  head.className = 'subhead';
+  head.textContent = GROUP_LABEL[gid];
+  head.style.paddingTop = '10px';
+  partsEl.appendChild(head);
+  for (const part of PARTS.filter(p => p.group === gid)) {
+    const b = document.createElement('button');
+    b.className = 'part';
+    b.dataset.id = part.id;
+    b.innerHTML = `<span class="dot ${part.status}"></span><span>${part.name}</span>`;
+    b.onclick = () => { select(part.id); focusPart(part.id); };
+    partsEl.appendChild(b);
+  }
+}
+
+const stepsEl = $('#steps');
+for (const step of STEPS) {
+  const b = document.createElement('button');
+  b.className = 'stepbtn';
+  b.innerHTML = `<span class="num">${step.n}</span><span class="txt">${step.title}</span>`;
+  b.onclick = () => applyStep(step.n);
+  stepsEl.appendChild(b);
+}
+
+function applyStep(n) {
+  activeStep = activeStep === n ? null : n;
+  document.querySelectorAll('.stepbtn').forEach((el, i) => {
+    el.classList.toggle('on', activeStep === i + 1);
+  });
+  if (!activeStep) {
+    setExplode(0);
+    setFocus([]);
+    $('#selName').textContent = 'ประกอบทั้งหมด';
+    $('#selEn').textContent = 'ทุกชิ้นในตำแหน่งติดตั้ง';
+    $('#selBody').innerHTML = '<dt>ขั้นตอน</dt><dd>กดขั้นตอนใดก็ได้ในรายการด้านซ้ายเพื่อดูรายละเอียด</dd>';
+    return;
+  }
+  const step = STEPS[activeStep - 1];
+  setFocus(step.parts);
+  setExplode(0.18);
+  const part = PART_MAP.get(step.parts[0]);
+  $('#selName').textContent = `ขั้นที่ ${step.n} · ${step.title}`;
+  $('#selEn').textContent = step.parts.map(p => PART_MAP.get(p).name).join(' · ');
+  $('#selBody').innerHTML = `<dt>ทำอะไร</dt><dd>${step.body}</dd>`;
+}
+
+function setFocus(ids) {
+  const keep = new Set(ids);
+  for (const [id, g] of meshes) {
+    const dim = ids.length > 0 && !keep.has(id);
+    g.traverse(o => {
+      if (!o.isMesh) return;
+      if (o.userData.hidden) o.visible = ids.length === 0 || keep.has(id);
+      const base = o.userData.baseOpacity ?? (o.userData.baseOpacity = o.material.opacity);
+      o.material.transparent = dim || base < 1;
+      o.material.opacity = dim ? Math.min(base, 0.12) : base;
+      o.material.depthWrite = !dim;
+    });
+  }
+}
+
+let explodeTarget = 0;
+let explodeValue = 0;
+function setExplode(v) {
+  explodeTarget = v;
+  $('#explode').value = Math.round(v * 100);
+}
+
+$('#explode').addEventListener('input', e => {
+  explodeTarget = Number(e.target.value) / 100;
+  activeStep = null;
+  document.querySelectorAll('.stepbtn').forEach(el => el.classList.remove('on'));
+  setFocus([]);
+});
+
+const VIEWS = [
+  { id: 'iso', label: 'เฉียง', pos: [62, 52, 84], target: [0, 19, 0] },
+  { id: 'front', label: 'หน้า', pos: [0, 24, 96], target: [0, 19, 0] },
+  { id: 'side', label: 'ข้าง', pos: [96, 26, 6], target: [0, 19, 0] },
+  { id: 'top', label: 'บน', pos: [8, 96, 26], target: [0, 19, 0] },
+];
+const viewsEl = $('#views');
+for (const v of VIEWS) {
+  const b = document.createElement('button');
+  b.className = 'chip' + (v.id === 'iso' ? ' on' : '');
+  b.textContent = v.label;
+  b.onclick = () => {
+    document.querySelectorAll('#views .chip').forEach(c => c.classList.remove('on'));
+    b.classList.add('on');
+    flyTo(v.pos, v.target);
+  };
+  viewsEl.appendChild(b);
+}
+
+let fly = null;
+function flyTo(pos, target) {
+  fly = {
+    t: 0,
+    fromPos: camera.position.clone(),
+    toPos: new THREE.Vector3(...pos),
+    fromTarget: controls.target.clone(),
+    toTarget: new THREE.Vector3(...target),
+  };
+}
+
+function focusPart(id) {
+  const part = PART_MAP.get(id);
+  if (!part) return;
+  const box3 = new THREE.Box3().setFromObject(meshes.get(id));
+  const center = box3.getCenter(new THREE.Vector3());
+  const size = box3.getSize(new THREE.Vector3()).length();
+  const dist = Math.max(26, size * 3.2);
+  const dir = new THREE.Vector3(0.55, 0.45, 0.7).normalize();
+  flyTo(center.clone().add(dir.multiplyScalar(dist)).toArray(), center.toArray());
+}
+
+// ---------------------------------------------------------------- loop
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+
+  explodeValue += (explodeTarget - explodeValue) * Math.min(1, dt * 7);
+  if (Math.abs(explodeTarget - explodeValue) < 0.001) explodeValue = explodeTarget;
+
+  for (const [, g] of meshes) {
+    const target = g.userData.base.clone().addScaledVector(g.userData.explode, explodeValue);
+    g.position.lerp(target, Math.min(1, dt * 9));
+  }
+
+  if (fly) {
+    fly.t = Math.min(1, fly.t + dt * 1.6);
+    const e = 1 - Math.pow(1 - fly.t, 3);
+    camera.position.lerpVectors(fly.fromPos, fly.toPos, e);
+    controls.target.lerpVectors(fly.fromTarget, fly.toTarget, e);
+    if (fly.t >= 1) fly = null;
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+animate();
+</script>
+</body>
+</html>

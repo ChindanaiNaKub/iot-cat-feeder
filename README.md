@@ -5,6 +5,7 @@
 ## โครงสร้าง
 
 - `docs/plan.md` แผนงาน ลำดับงาน และความเสี่ยง
+- `docs/model/index.html` แบบจำลอง 3D แยกชิ้น เปิดในเบราว์เซอร์ได้ หรือดูออนไลน์ที่ https://chindanainakub.github.io/iot-cat-feeder-model/
 - `docs/build/out/` เอกสารส่งอาจารย์ฉบับภาษาอังกฤษ (docx และ pdf) คือ Proposal, SRS, SDD
 - `docs/build/` สคริปต์ที่สร้างเอกสารทั้งสามฉบับและแผนภาพ รัน `python3 build.py` เพื่อสร้างใหม่
 - `docs/proposal.md`, `docs/srs.md`, `docs/sdd.md` ฉบับร่างภาษาไทย ใช้เป็น quick reference
