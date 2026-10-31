@@ -177,6 +177,50 @@
   <text x="30" y="122" class="small">5 × 2 ÷ (1 + 2) = 3.33V</text>
 </svg>
 
+
+<h2>วิธีติดตั้ง load cell ให้วัดได้จริง</h2>
+<p class="note">แท่งโลหะนี้วัดได้เพราะ<b>มันงอ</b> ตอนมีน้ำหนักกด ต้องยึดปลายข้างหนึ่งไว้กับฐาน แล้วให้อีกปลายรับน้ำหนัก ถ้าวางของทับกลางแท่งหรือรองทั้งสองข้าง มันจะไม่งอและอ่านค่าไม่ได้</p>
+
+<svg width="700" height="330" viewBox="0 0 700 330" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="dn" markerWidth="9" markerHeight="9" refX="4" refY="8" orient="auto">
+      <path d="M0,0 L8,0 L4,8 z" fill="#b00020"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="20" font-weight="bold" font-size="13">ถูก</text>
+
+  <rect x="30" y="236" width="300" height="20" fill="#ddd7cb" stroke="#a89880"/>
+  <rect x="70" y="196" width="240" height="18" fill="#c9ced4" stroke="#7d868f"/>
+  <rect x="70" y="214" width="60" height="22" fill="#9aa3ad" stroke="#6b737b"/>
+  <rect x="80" y="205" width="8" height="30" fill="#6b737b"/>
+  <rect x="110" y="205" width="8" height="30" fill="#6b737b"/>
+  <text x="72" y="192" font-size="11" fill="#555">ปลายยึดกับฐาน</text>
+
+  <rect x="300" y="186" width="8" height="12" fill="#7d868f"/>
+  <rect x="250" y="172" width="110" height="12" fill="#e7e2d7" stroke="#a89880"/>
+  <path d="M255 172 Q305 120 360 172 Z" fill="#f4f1e8" stroke="#a89880"/>
+  <line x1="305" y1="60" x2="305" y2="112" stroke="#b00020" stroke-width="3" marker-end="url(#dn)"/>
+  <text x="314" y="80" font-size="11" fill="#b00020">น้ำหนักอาหาร</text>
+
+  <path d="M190 232 Q215 224 240 232" stroke="#b00020" stroke-width="2" fill="none" stroke-dasharray="4 3"/>
+  <text x="150" y="252" font-size="11" fill="#b00020">ช่วงที่ต้องงอได้ ห้ามมีอะไรทับ</text>
+
+  <text x="380" y="20" font-weight="bold" font-size="13" fill="#b00020">ผิด</text>
+  <rect x="380" y="236" width="300" height="20" fill="#ddd7cb" stroke="#a89880"/>
+  <rect x="420" y="196" width="240" height="18" fill="#c9ced4" stroke="#7d868f"/>
+  <rect x="420" y="214" width="60" height="22" fill="#9aa3ad" stroke="#6b737b"/>
+  <rect x="600" y="214" width="60" height="22" fill="#9aa3ad" stroke="#6b737b"/>
+  <path d="M470 196 Q530 168 590 196 Z" fill="#f4f1e8" stroke="#a89880"/>
+  <text x="430" y="264" font-size="11" fill="#b00020">รองสองข้างแล้ววางของกลางแท่ง แท่งไม่งอ ค่าไม่ขยับ</text>
+
+  <text x="20" y="300" font-size="11.5" fill="#333">แท่งที่ได้มาเป็นรุ่น 5 kg ใช้ได้ แต่จะไวต่อน้ำหนักน้อยๆ น้อยกว่าตัว 1 kg ถ้าจับค่ายากให้เปลี่ยนเป็น 1 kg</text>
+</svg>
+
+<p class="note">ลำดับติดตั้ง: ขันสกรูสองรูฝั่งหนึ่งลงฐานให้แน่น แล้วทำเสายึดเล็กๆ ที่ปลายอีกฝั่งขึ้นมารองจานอาหาร ให้จุดสัมผัสมีจุดเดียว อย่าให้ฐานหรือจานไปแตะช่วงกลางแท่ง</p>
+<p class="note"><b>เรื่องบัดกรี</b> โมดูล HX711 ที่ซื้อมาขาเมล็ดยังไม่ได้บัดกรี ต้องบัดกรีขา 4 ขาเข้าบอร์ดก่อน ไม่งั้นเสียบสายไม่แน่นและค่าจะแกว่ง ถ้าไม่มีหัวบัดกรีให้ยืมหรือซื้อหัวเล็กๆ ราคาไม่กี่ร้อยบาท ใช้แค่ 4 จุด</p>
+<p class="note"><b>สีสาย load cell</b> ที่พบบ่อยคือ แดง E+, ดำ E-, ขาว A-, เขียว A+ แต่บางยี่ห้อสลับกัน ถ้าอ่านค่าแล้วกดลงไปแล้วค่ายิ่งลด ให้สลับ A+ กับ A-</p>
+
 <h2>ลำดับที่ควรต่อ</h2>
 <ul>
   <li><b>1. HC-SR04 #1 ตัวเดียว</b> ต่อ VCC, GND, TRIG D6, ECHO D7 ผ่านตัวแบ่ง แล้วรัน <code>firmware/ultrasonic_test/ultrasonic_test.ino</code> เอามือกวาดหน้าดูว่าค่าเปลี่ยน</li>
