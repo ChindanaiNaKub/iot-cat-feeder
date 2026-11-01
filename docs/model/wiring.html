@@ -91,6 +91,8 @@
   }
   @media (max-width: 720px) {
     #right { display: none; }
+    body.has-sel #right { display: block; top: auto; bottom: 12px; left: 12px; right: 12px; width: auto; max-height: 44%; }
+    body.has-sel #hud { display: none; }
     #hud { flex-direction: column; align-items: stretch; gap: 8px; }
     input[type=range] { width: 100%; }
   }
@@ -480,6 +482,7 @@ function setWire(index) {
   const w = WIRES[index];
   activeWire = index;
   activeStep = null;
+  document.body.classList.add('has-sel');
   document.querySelectorAll('.stepbtn').forEach(el => el.classList.remove('on'));
   $('#t').textContent = `สายที่ ${index + 1} · ${w.from} → ${w.to}`;
   $('#e').textContent = `ขั้นที่ ${w.step}`;
@@ -504,6 +507,7 @@ function applyStep(n) {
   document.querySelectorAll('.stepbtn').forEach((el, i) => el.classList.toggle('on', activeStep === i + 1));
   activeWire = null;
   visibleCount = activeStep ? step.upto : 0;
+  document.body.classList.toggle('has-sel', !!activeStep);
   $('#t').textContent = activeStep ? `ขั้นที่ ${step.n} · ${step.title}` : 'เลือกสาย';
   $('#e').textContent = activeStep ? step.hint : 'คลิกสายในโมเดลหรือในรายการ';
   $('#b').innerHTML = activeStep
@@ -554,6 +558,7 @@ $('#count').addEventListener('input', e => {
   visibleCount = Number(e.target.value);
   activeWire = null;
   activeStep = null;
+  document.body.classList.remove('has-sel');
   document.querySelectorAll('.stepbtn').forEach(el => el.classList.remove('on'));
   $('#t').textContent = 'เลือกสาย';
   $('#e').textContent = `แสดง ${visibleCount} จาก ${WIRES.length} เส้น`;

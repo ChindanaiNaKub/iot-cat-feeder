@@ -134,6 +134,8 @@
   }
   @media (max-width: 720px) {
     #right { display: none; }
+    body.has-sel #right { display: block; top: auto; bottom: 12px; left: 12px; right: 12px; width: auto; max-height: 44%; }
+    body.has-sel #hud { display: none; }
     #hud { flex-direction: column; align-items: stretch; gap: 8px; }
     input[type=range] { width: 100%; }
     .hint { font-size: 10px; }
@@ -682,6 +684,7 @@ $('#navToggle').onclick = () => document.body.classList.toggle('nav-closed');
 
 function renderInfo(id) {
   const part = PART_MAP.get(id);
+  document.body.classList.toggle('has-sel', !!part);
   if (!part) {
     $('#selName').textContent = 'เลือกชิ้นส่วน';
     $('#selEn').textContent = 'คลิกที่ชิ้นส่วนในโมเดลหรือในรายการ';
@@ -730,6 +733,7 @@ for (const step of STEPS) {
 
 function applyStep(n) {
   activeStep = activeStep === n ? null : n;
+  document.body.classList.toggle('has-sel', !!activeStep);
   document.querySelectorAll('.stepbtn').forEach((el, i) => {
     el.classList.toggle('on', activeStep === i + 1);
   });
