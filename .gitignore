@@ -1,3 +1,7 @@
 .expect/
 secrets.h
 __pycache__/
+docs/evidence/*.jpg
+docs/evidence/*.png
+docs/evidence/*.mp4
+docs/evidence/*.mov
