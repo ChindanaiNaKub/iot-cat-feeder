@@ -7,6 +7,7 @@
 - `docs/plan.md` แผนงาน ลำดับงาน และความเสี่ยง
 - `docs/model/wiring.html` ผังต่อสายบนเบรดบอร์ดแบบไล่ทีละเส้น
 - `docs/model/index.html` แบบจำลอง 3D แยกชิ้น เปิดในเบราว์เซอร์ได้ หรือดูออนไลน์ที่ https://chindanainakub.github.io/iot-cat-feeder-model/
+- `docs/model/` โฟลเดอร์ที่ deploy ขึ้น Cloudflare Pages ดูคู่มือประกอบออนไลน์ (ทั้งกล่องนอกและวงจรใน) ที่ https://iot-cat-feeder.pages.dev/
 - `docs/build/out/` เอกสารส่งอาจารย์ฉบับภาษาอังกฤษ (docx และ pdf) คือ Proposal, SRS, SDD
 - `docs/build/` สคริปต์ที่สร้างเอกสารทั้งสามฉบับและแผนภาพ รัน `python3 build.py` เพื่อสร้างใหม่
 - `docs/proposal.md`, `docs/srs.md`, `docs/sdd.md` ฉบับร่างภาษาไทย ใช้เป็น quick reference

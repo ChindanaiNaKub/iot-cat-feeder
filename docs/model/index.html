@@ -147,7 +147,7 @@
 <div id="left" class="panel">
   <header>
     <h1>ขั้นประกอบ</h1>
-    <p>กดขั้นเพื่อดูว่าชิ้นไหนเข้าตำแหน่งไหน แล้วหมุนดูรอบๆ</p>
+    <p>กดขั้นเพื่อดูว่าชิ้นไหนเข้าตำแหน่งไหน แล้วหมุนดูรอบๆ ลากสไลเดอร์ "แยกชิ้น" เพื่อถอดกล่องนอกออก</p>
     <p style="margin-top:6px"><a href="./wiring.html" style="color:#2f6fd0;font-size:11.5px">ไปที่ผังต่อสายบนเบรดบอร์ด →</a></p>
   </header>
   <div id="scroll">
@@ -333,6 +333,33 @@ const PARTS = [
     make: 'ติดบอร์ดไว้ด้านใน',
   },
   {
+    id: 'front', group: 'shell', name: 'ผนังหน้า', en: 'Front panel',
+    status: 'planned', explode: [0, 0, 21], pos: [0, 0, 8.3],
+    note: 'ปิดด้านหน้าทั้งแผ่น เว้นช่องกว้าง 12 ซม. สูง 7 ซม. ให้ถ้วยยื่นออกมา และเจาะช่องให้เซ็นเซอร์แมว',
+    build: () => {
+      const g = new THREE.Group();
+      g.add(box(6, 26, 1.6, M.cardboard, -9, 14, 0));
+      g.add(box(6, 26, 1.6, M.cardboard, 9, 14, 0));
+      g.add(box(24, 20, 1.6, M.cardboard, 0, 17, 0));
+      return g;
+    },
+    make: 'ตัดช่องถ้วยตามขนาดถ้วยจริงก่อน เก็บขอบให้เรียบ กันแมวครูดขา',
+  },
+  {
+    id: 'roof', group: 'shell', name: 'ฝาบน', en: 'Top frame',
+    status: 'planned', explode: [0, 24, 0], pos: [0, 27.8, 0],
+    note: 'เป็นกรอบสี่ด้าน ไม่ใช่แผ่นทึบ เพราะถังอาหารโผล่ขึ้นมาด้านบนและต้องเปิดเติมได้',
+    build: () => {
+      const g = new THREE.Group();
+      g.add(box(3.7, 1.6, 18, M.cardboard, -10.15, 0, 0));
+      g.add(box(3.7, 1.6, 18, M.cardboard, 10.15, 0, 0));
+      g.add(box(16.6, 1.6, 2.7, M.cardboard, 0, 0, -7.65));
+      g.add(box(16.6, 1.6, 2.7, M.cardboard, 0, 0, 7.65));
+      return g;
+    },
+    make: 'ทากาวเฉพาะมุม อย่าปิดทับถัง ต้องยกออกได้เวลาเติมอาหาร',
+  },
+  {
     id: 'hopper', group: 'structure', name: 'ถังอาหาร', en: 'Hopper',
     status: 'have', explode: [0, 13, 0], pos: [0, 33, -1],
     note: 'ใช้กล่องพลาสติกหรือขวดน้ำตัดก้น ไม่ใช้ลัง เพราะเศษอาหารจะติดร่อง',
@@ -465,7 +492,7 @@ const PARTS = [
   },
   {
     id: 'presence', group: 'sensors', name: 'Ultrasonic ตรวจจับแมว', en: 'Presence sensor',
-    status: 'planned', explode: [7, -2, 18], pos: [8.6, 15, 8.2],
+    status: 'planned', explode: [7, -2, 22], pos: [8.6, 15, 9.9],
     note: 'ยิงออกด้านหน้า ตรวจว่าแมวเข้ามาในระยะ 60 ซม. ใช้ยืนยันสามครั้งติดกันก่อนให้อาหาร',
     build: () => {
       const g = new THREE.Group();
@@ -477,7 +504,7 @@ const PARTS = [
       g.add(eyeL, eyeR);
       return g;
     },
-    make: 'ขา ECHO จ่าย 5V ต้องมีตัวแบ่ง 1k กับ 2k ก่อนเข้าบอร์ด',
+    make: 'เจาะช่องที่ผนังหน้าให้ตาสองข้างโผล่พ้น แล้วติดกาวร้อน ขา ECHO จ่าย 5V ต้องมีตัวแบ่ง 1k กับ 2k ก่อนเข้าบอร์ด',
   },
   {
     id: 'level', group: 'sensors', name: 'Ultrasonic วัดระดับอาหาร', en: 'Level sensor',
@@ -545,10 +572,13 @@ const STEPS = [
     body: 'หันออกด้านหน้าให้สูงจากพื้นพอดีตัวแมว ต่อ ECHO ผ่านตัวแบ่งแรงดันก่อนเข้าบอร์ด แล้วทดสอบนับระยะด้วย Serial Monitor' },
   { n: 7, title: 'วางถ้วยและโหลดเซลล์', parts: ['loadcell', 'bowl'],
     body: 'ยึดโหลดเซลล์กับฐานให้แน่น วางถ้วยบนแท่น ชั่งน้ำหนักก่อนใส่ HX711 แล้วทดสอบค่าวัยวายข้ามชั่วโมง' },
+  { n: 8, title: 'ปิดกล่องนอก', parts: ['front', 'roof'],
+    body: 'ปิดผนังหน้าโดยเว้นช่องให้ถ้วยและเซ็นเซอร์โผล่ แล้วปิดฝาบนแบบกรอบให้ยกออกได้ เจาะรูลอดสายไฟที่มุมหลังล่างก่อนประกบแผ่นสุดท้าย ไม่งั้นต้องรื้อใหม่' },
 ];
 
 const PART_MAP = new Map(PARTS.map(p => [p.id, p]));
 const GROUP_LABEL = {
+  shell: 'กล่องนอก',
   structure: 'โครงสร้าง',
   actuator: 'ชุดเปิดปิด',
   electronics: 'วงจร',
@@ -672,7 +702,7 @@ function renderInfo(id) {
 
 // ---------------------------------------------------------------- panels
 const partsEl = $('#parts');
-const groups = ['structure', 'actuator', 'electronics', 'sensors'];
+const groups = ['shell', 'structure', 'actuator', 'electronics', 'sensors'];
 for (const gid of groups) {
   const head = document.createElement('div');
   head.className = 'subhead';
