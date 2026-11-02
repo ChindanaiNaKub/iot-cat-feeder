@@ -1,7 +1,7 @@
 """Project metadata shared by the three generated reports."""
 
 PROJECT = "IoT Cat Feeder"
-TAGLINE = "An automatic, portion-controlled cat feeder with a web dashboard on the ESP8266"
+TAGLINE = "An automatic, timed cat feeder with a web dashboard on the ESP8266"
 MEMBER = "Chindanai Jaiman"
 STUDENT_ID = "662115012"
 PROGRAMME = "Bachelor of Science Software Engineering Program"

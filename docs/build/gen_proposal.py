@@ -99,12 +99,14 @@ def write_body(doc, counter):
          "Wet food dispensing"],
         ["Cat presence detection with an ultrasonic sensor (target)",
          "Camera or two-way audio"],
-        ["Portion control by weight with a load cell (target)",
-         "Support for more than one feeder or more than one cat"],
+        ["Hopper level from a downward ultrasonic sensor",
+         "Portion control by weight with a load cell"],
+        ["", "Support for more than one feeder or more than one cat"],
     ], widths=[8.25, 8.25])
-    para(doc, "The two target features are carried as requirements so the design is ready for them, but they "
-              "ship only if the parts arrive and pass test by 2 November. The reason for the rule is that a "
-              "requirement that is written and tested earns credit, while a half-connected sensor does not.")
+    para(doc, "Portion control left the scope on 2 November, when the header pins of the amplifier were found "
+              "to be unsoldered. It moved to Future Work rather than ship half-built. Presence detection is "
+              "wired and integrated, and it ships if it passes the test on 3 November. A requirement that is "
+              "written and tested earns credit, while a half-connected sensor does not.")
 
     h2(doc, "1.5", "Objectives")
     numbered(doc, [
@@ -116,7 +118,6 @@ def write_body(doc, counter):
         "browser disconnects immediately after sending the command.",
         "Record the time, count, and trigger source of each meal so the owner can confirm a feeding happened.",
         "Detect a cat within 60 cm and dispense a meal in under two seconds, at most once per 30 minutes.",
-        "Dispense a portion within 15 percent of the target weight.",
         "Document the design so another student can rebuild the device from the repository alone.",
     ])
 
@@ -193,9 +194,9 @@ def write_body(doc, counter):
         ["Presence sensing", "HC-SR04 ultrasonic", "FC-51 infrared proximity",
          "Ultrasonic reports distance, which supports both presence and level. The FC-51 is binary and is "
          "fooled by a cardboard hopper wall."],
-        ["Portion control", "HX711 with 1 kg load cell", "Open-loop flap timing",
-         "Timing assumes a constant flow rate. A load cell measures the actual mass, which allows the "
-         "controller to correct."],
+        ["Portion control", "Open-loop flap timing", "HX711 with 1 kg load cell",
+         "The load cell measures the actual mass, but the amplifier header pins were not soldered before the "
+         "deadline. Open-loop timing ships, and the closed loop moves to Future Work."],
     ], widths=[2.9, 3.4, 3.4, 6.8], size=9)
 
     h2(doc, "2.3", "Risk Analysis")
@@ -211,8 +212,9 @@ def write_body(doc, counter):
          "is prevented by a minute key."],
         ["R-04", "Ultrasonic readings oscillate on a kibble surface", "High", "Medium",
          "Sample ten times per measurement and use the median. Reject echoes outside the hopper depth."],
-        ["R-05", "Load cell cannot be mounted rigidly on cardboard", "Medium", "Medium",
-         "Decide by 2 November. If the platform flexes, drop the feature and record it as Future Work."],
+        ["R-05", "Load cell work is not finished before the deadline", "Medium", "Medium",
+         "Occurred on 2 November. The amplifier header pins were never soldered, so portion control moved to "
+         "Future Work and the slot went to the 24 hour schedule test."],
         ["R-06", "Wi-Fi in the examination room blocks the device", "Low", "High",
          "The dashboard is reachable in the local network, so the demonstration does not depend on internet "
          "access. A phone hotspot is the fallback."],
@@ -241,7 +243,7 @@ def write_body(doc, counter):
         ["F2", "On-demand feeding from the web dashboard", "Owner", "Delivered"],
         ["F3", "Flap status, daily count, last meal, and connection quality", "Owner", "Delivered"],
         ["F4", "Cat presence detection and presence-triggered meal", "Cat", "Parts received"],
-        ["F5", "Portion control by weight, and hopper level", "System", "Parts received"],
+        ["F5", "Hopper level reported as a percentage of depth", "System", "Parts received"],
     ], widths=[1.2, 9.3, 3.0, 3.0])
 
     h2(doc, "3.3", "System Architecture")
@@ -251,8 +253,8 @@ def write_body(doc, counter):
     figure(doc, counter, str(FIG / "context.png"), "Context diagram of the proposed system.", width_cm=16.5)
 
     h2(doc, "3.4", "Use Case Overview")
-    para(doc, "Five use cases are identified. UC-01 to UC-03 are delivered. UC-04 and UC-05 are the presence "
-              "and portion targets.")
+    para(doc, "Five use cases are identified. UC-01 to UC-03 are delivered. UC-04 is the presence target. "
+              "UC-05 is the portion target, which moved to Future Work on 2 November.")
     figure(doc, counter, str(FIG / "usecase.png"), "Use case diagram. Dashed use cases are planned.",
            width_cm=16.5)
 
@@ -292,7 +294,8 @@ def write_body(doc, counter):
         ["30 Oct 2026", "Documents and parts order", "Proposal, SRS, and SDD drafted. Sensors ordered."],
         ["31 Oct 2026", "Requirements frozen", "Requirement set baselined in version control."],
         ["1 Nov 2026", "Presence detection integrated", "Cat detected in 16 of 20 trials."],
-        ["2 Nov 2026", "Portion control integrated or descoped", "Weight within 15 percent, or feature removed."],
+        ["2 Nov 2026", "Portion control descoped, 24 hour test begun",
+         "Portion control moved to Future Work. The scheduled feeding test starts and runs for 24 hours."],
         ["3 Nov 2026", "System test and evidence", "All test cases executed. Photos and video captured."],
         ["4 Nov 2026", "Submission", "Repository tagged, report submitted."],
     ], widths=[3.2, 5.2, 8.1])
@@ -304,7 +307,7 @@ def write_body(doc, counter):
         "`firmware/servo_test/servo_test.ino`.",
         "Wiring diagram in `docs/wiring_nodemcu_servo.html`.",
         "This proposal, the SRS, and the SDD.",
-        "Test records with photographs and a demonstration video.",
+        "Test records with photographs.",
         "The output and discussion chapter with measured results.",
         "The conclusion and future work chapter.",
     ])
@@ -325,6 +328,8 @@ def write_body(doc, counter):
 
     h2(doc, "5.5", "Future Work")
     bullets(doc, [
+        "Restore portion control with the HX711 amplifier and a 1 kg load cell. The wiring diagram and the "
+        "test sketch are already in the repository.",
         "Move the daily history into flash so it survives a power cut.",
         "Add an ESP32-CAM module for a still image per meal, so the owner can confirm the cat ate rather than "
         "the bowl.",

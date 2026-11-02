@@ -79,7 +79,7 @@ def write_body(doc, counter):
         ["F2", "On-demand feeding", "Dispenses one meal when the owner presses the dashboard button.", "Delivered"],
         ["F3", "Status and history", "Reports flap state, daily count, last meal, and link quality.", "Delivered"],
         ["F4", "Presence-triggered feeding", "Dispenses a meal when a cat is detected near the bowl.", "Parts received"],
-        ["F5", "Portion and level control", "Dispenses a measured mass and reports hopper level.", "Parts received"],
+        ["F5", "Hopper level monitoring", "Reports the remaining food as a percentage of hopper depth.", "Parts received"],
     ], widths=[1.2, 4.2, 8.1, 3.0])
 
     h2(doc, "1.5", "User Characteristics")
@@ -113,8 +113,6 @@ def write_body(doc, counter):
          "Brownout or a failed meal. R-01 in the proposal covers the mitigation."],
         ["A-05", "The owner's phone and the device are on the same subnet.",
          "The dashboard cannot be reached by name or address."],
-        ["A-06", "The load cell can be mounted on a rigid platform.",
-         "Portion control is descoped and recorded as future work."],
     ], widths=[1.4, 9.0, 6.1])
 
     h2(doc, "1.8", "Acronyms and Definitions")
@@ -214,21 +212,21 @@ def write_body(doc, counter):
         ["Sensor", "HC-SR04 or HC-SR04P, echo divided to 3.3 V"],
     ], widths=[5.2, 11.3])
 
-    h3(doc, "2.1.5", "F5: Portion and Level Control (target)")
-    para(doc, "A load cell under the bowl measures the mass dispensed. The controller closes the flap when the "
-              "target mass is reached, or after a timeout, whichever comes first. A second ultrasonic sensor "
-              "aimed down into the hopper estimates the remaining food.")
+    h3(doc, "2.1.5", "F5: Hopper Level Monitoring")
+    para(doc, "A second ultrasonic sensor aimed down into the hopper estimates the remaining food as a "
+              "percentage of the usable depth. Portion control by weight moved to Future Work on 2 November, "
+              "when the amplifier header pins were found to be unsoldered.")
     table(doc, counter, "F5 parameters", ["Parameter", "Value"], [
-        ["Target portion", "20 g per meal, adjustable"],
-        ["Tolerance", "plus or minus 15 percent"],
-        ["Flap timeout", "3 s, then close regardless of mass"],
+        ["Measurement", "Distance from the lid to the food surface"],
         ["Level reporting", "Percentage of usable hopper depth"],
-        ["Amplifier gain", "Channel A, gain 128"],
+        ["Empty depth", "18 cm, measured on the assembled hopper"],
+        ["Full depth", "4 cm, measured on the assembled hopper"],
+        ["Filtering", "Median of the last five samples"],
     ], widths=[5.2, 11.3])
 
     h2(doc, "2.2", "Use Case Diagram")
     figure(doc, counter, str(FIG / "usecase.png"),
-           "Use cases. Dashed use cases are targets and are not part of the delivered baseline.",
+           "Use cases. Dashed use cases are planned extensions and are not part of version 1.0.0.",
            width_cm=16.5)
 
     h2(doc, "2.3", "Use Case Description")
@@ -291,7 +289,7 @@ def write_body(doc, counter):
         ("Frequency", "At most once per 30 minutes."),
     ])
 
-    h3(doc, "2.3.5", "UC-05: Dispense a Measured Portion (target)")
+    h3(doc, "2.3.5", "UC-05: Dispense a Measured Portion (deferred)")
     use_case(doc, counter, "UC-05", "Dispense a measured portion", [
         ("Actor", "System"),
         ("Goal", "Deliver a mass of food within tolerance of the target."),
@@ -354,7 +352,7 @@ def write_body(doc, counter):
         ["FR-14", "The device shall not dispense more than one presence-triggered meal in 30 minutes.",
          "Should", "T", "Parts received"],
         ["FR-15", "The device shall dispense a mass within 15 percent of the configured target.",
-         "Could", "T", "Parts received"],
+         "Could", "T", "Future work"],
         ["FR-16", "The device shall report hopper level as a percentage of usable depth.", "Could", "D",
          "Parts received"],
         ["FR-17", "The device shall persist the daily history across a reboot.", "Could", "T", "Future work"],
@@ -401,9 +399,6 @@ def write_body(doc, counter):
         ["HC-SR04 presence", "Echo", "D7, GPIO13", "5 V output. Divided to 3.33 V with 1k and 2k.", "Wired"],
         ["HC-SR04 level", "Trig", "D1, GPIO5", "Aimed down into the hopper.", "Wired"],
         ["HC-SR04 level", "Echo", "D2, GPIO4", "Divided with a second 1k and 2k pair.", "Wired"],
-        ["HX711", "DT", "D0, GPIO16", "Input only pin. No interrupt support is needed.", "Wired"],
-        ["HX711", "SCK", "D3, GPIO0", "Must be high at boot. The board pulls it up.", "Wired"],
-        ["HX711", "VCC", "3V3", "Must not use 5 V. The DT output follows the supply.", "Wired"],
         ["Status LED", "Digital out", "D4, GPIO2", "Bring-up only. Active low on this board.", "Test"],
     ], widths=[2.6, 2.0, 2.9, 6.4, 2.6], size=9)
 
@@ -444,7 +439,6 @@ def write_body(doc, counter):
     h2(doc, "2.9", "Design Constraints")
     bullets(doc, [
         "The servo signal uses GPIO14 because the board exposes it as D5 with no boot-time conflict.",
-        "GPIO16 is not usable for the load cell clock because it has no interrupt support on this core.",
         "The echo line of a 5 V ultrasonic sensor must be divided before it reaches a 3.3 V input.",
         "No blocking delay is permitted in the main loop, because the HTTP server is polled from the same loop.",
         "The dashboard must be complete in one response under 4 KB, because it is compiled into the binary.",
@@ -461,7 +455,7 @@ def write_body(doc, counter):
         ["FR-08", "Observation", "The page changes without user action within 2 s."],
         ["FR-09", "Clock rollover", "The count returns to zero after local midnight."],
         ["FR-13, FR-14", "Field test with the cat", "16 of 20 detections correct. No second meal inside 30 minutes."],
-        ["FR-15, FR-16", "Scale comparison", "Dispensed mass within 15 percent of target on 10 trials."],
+        ["FR-16", "Level comparison", "Reported percentage within 10 points of the measured fill at three known levels."],
         ["FR-17", "Power cycle", "History survives a reboot. Currently fails by design."],
         ["NFR-PM-01", "Stopwatch", "Median response under 2 s across 20 requests."],
         ["NFR-RL-02", "Router power cycle", "The device rejoins with no manual action."],
@@ -486,7 +480,7 @@ def write_body(doc, counter):
         ["Proposal and abstract", "Doc", "Proposal, introduction"],
         ["SDD", "Doc", "Design document, architecture and detailed design"],
         ["Output and discussion", "Doc", "To be written after testing on 3 November"],
-        ["Photos and evidence", "Doc", "Test record and demonstration video"],
+        ["Photos and evidence", "Doc", "Test record and photographs of the assembled device"],
         ["Conclusion and future work", "Doc", "Proposal, future work; conclusion to be written"],
     ], widths=[6.4, 2.4, 7.7])
 

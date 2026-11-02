@@ -99,7 +99,6 @@ def write_body(doc, counter):
         ["`clockText`, `scheduleText`", "Functions", "`time`, constant table", "Delivered"],
         ["`keepWifi`", "Function", "`WiFi`, `millis`", "Delivered"],
         ["Presence detector", "Function", "Ultrasonic driver, `feed`", "Parts received"],
-        ["Mass controller", "Function", "HX711 driver, `feed`", "Parts received"],
     ], widths=[4.0, 4.6, 5.0, 2.9], size=9)
 
     h2(doc, "2.4", "Deployment and Power Design")
@@ -324,7 +323,8 @@ def write_body(doc, counter):
         ["FR-08", "Dashboard script", "TC-01"],
         ["FR-09", "`markFeed`", "TC-07"],
         ["FR-13, FR-14", "Presence detector, target", "TC-09"],
-        ["FR-15, FR-16", "Mass controller, target", "TC-10"],
+        ["FR-15", "Not implemented, deferred", "Future work"],
+        ["FR-16", "Level sensor", "TC-10"],
         ["FR-17, FR-18", "Not implemented", "Future work"],
         ["NFR-RL-01", "`loop` close condition", "TC-03"],
         ["NFR-RL-02", "`keepWifi`", "TC-11"],
@@ -347,8 +347,8 @@ def write_body(doc, counter):
          "404 for each, with no meal dispensed."],
         ["TC-09", "Presence detection", "Walk past the sensor 20 times at 50 to 70 cm.",
          "At least 16 detections, no meal inside the cooldown."],
-        ["TC-10", "Portion mass", "Dispense 10 meals onto a scale.",
-         "Each within 15 percent of target."],
+        ["TC-10", "Hopper level", "Fill the hopper to three measured levels.",
+         "The reported percentage is within 10 points of each fill."],
         ["TC-11", "Network recovery", "Power cycle the router.", "The device rejoins within 30 s, no reboot."],
     ], widths=[1.3, 3.2, 6.2, 5.8], size=9)
 
@@ -357,7 +357,7 @@ def write_body(doc, counter):
         ["L-01", "History is in RAM", "A reboot clears the count", "Flash record, FR-17"],
         ["L-02", "No authentication", "Any client on the network can feed", "Token, or network isolation only"],
         ["L-03", "Count increments before the servo moves", "A failed servo still counts a meal",
-         "Count after the close, or verify with the load cell"],
+         "Count after the close"],
         ["L-04", "Status buffer is not overflow checked", "Possible truncated JSON", "Larger buffer or a "
                                                                                "structured writer"],
         ["L-05", "No external watchdog", "A hang stops feeding until the power is cycled",
@@ -367,6 +367,8 @@ def write_body(doc, counter):
 
     h2(doc, "4.4", "Future Work")
     bullets(doc, [
+        "Restore portion control with the HX711 amplifier and a 1 kg load cell. The wiring diagram and the "
+        "test sketch are already in the repository.",
         "Persist the last 32 meals to flash with an append-only record.",
         "Add an ESP32-CAM module and store one still image per meal on the device.",
         "Identify the cat with an RFID collar tag so a second cat cannot take the portion.",
