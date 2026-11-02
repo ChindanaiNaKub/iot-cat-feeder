@@ -384,8 +384,8 @@ def write_body(doc, counter):
         ["No blocking call in the main loop", "Yes, `delay` is used only in the bring-up sketch"],
         ["The flap has a bounded open time in every path", "Yes, the loop enforces it independent of HTTP"],
         ["The failure of a client does not change device state", f"Yes, Section {sec('3.7')}"],
-        ["Electrical limits of each pin are respected", "Partly. The echo divider is required for the target "
-                                                       "sensors and is recorded in the SRS limitations"],
+        ["Electrical limits of each pin are respected", "Yes. The 2.2k and 3.3k divider holds the 5 V echo "
+                                                       "at 3.00 V on both sensors"],
         ["The design states what it does not do", f"Yes, Section {sec('4.3')}"],
     ], widths=[8.6, 7.9])
 

@@ -7,6 +7,8 @@ sequence, and appendices are lettered once each, so a printed copy reads as one 
 import pathlib
 
 import docx_common
+import gen_conclusion
+import gen_output
 import gen_proposal
 import gen_sdd
 import gen_srs
@@ -20,6 +22,10 @@ PARTS = [
      "Functions, use cases, interfaces, and verifiable requirements.", 5, "A"),
     (gen_sdd, "Part III", "Software Design Description",
      "Architecture, detailed design, traceability, and the test plan.", 7, "B"),
+    (gen_output, "Part IV", "Output and Discussion",
+     "The delivered system, the measured results, and what they mean.", 11, "C"),
+    (gen_conclusion, "Part V", "Conclusion and Future Work",
+     "What was achieved, what was learned, and what comes next.", 14, "D"),
 ]
 
 

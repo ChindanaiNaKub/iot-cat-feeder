@@ -396,9 +396,9 @@ def write_body(doc, counter):
         ["Servo SG90", "PWM", "D5, GPIO14", "50 Hz, 1 to 2 ms pulse. Powered from VIN, not 3V3.", "Connected"],
         ["Servo SG90", "Supply", "VIN, GND", "5 V from powerbank. 470 uF across the rail.", "Connected"],
         ["HC-SR04 presence", "Trig", "D6, GPIO12", "3.3 V drive is accepted.", "Wired"],
-        ["HC-SR04 presence", "Echo", "D7, GPIO13", "5 V output. Divided to 3.33 V with 1k and 2k.", "Wired"],
+        ["HC-SR04 presence", "Echo", "D7, GPIO13", "5 V output. Divided to 3.00 V with 2.2k and 3.3k.", "Wired"],
         ["HC-SR04 level", "Trig", "D1, GPIO5", "Aimed down into the hopper.", "Wired"],
-        ["HC-SR04 level", "Echo", "D2, GPIO4", "Divided with a second 1k and 2k pair.", "Wired"],
+        ["HC-SR04 level", "Echo", "D2, GPIO4", "Divided with a second 2.2k and 3.3k pair.", "Wired"],
         ["Status LED", "Digital out", "D4, GPIO2", "Bring-up only. Active low on this board.", "Test"],
     ], widths=[2.6, 2.0, 2.9, 6.4, 2.6], size=9)
 
