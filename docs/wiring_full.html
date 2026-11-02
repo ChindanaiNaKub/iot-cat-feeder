@@ -54,7 +54,7 @@
   <line x1="240" y1="132" x2="360" y2="147" stroke="#555" stroke-width="1.8" marker-end="url(#ar)"/>
   <text x="252" y="124" class="small">TRIG</text>
   <line x1="240" y1="168" x2="360" y2="197" stroke="#555" stroke-width="1.8" marker-end="url(#ar)"/>
-  <text x="252" y="192" class="small">ECHO ผ่าน 1k/2k</text>
+  <text x="252" y="192" class="small">ECHO ผ่าน 2.2k/3.3k</text>
 
   <rect x="40" y="256" width="200" height="76" rx="8" fill="#e3f0ff" stroke="#2f6fd0" stroke-width="2"/>
   <text x="140" y="282" text-anchor="middle">HC-SR04 #2</text>
@@ -63,7 +63,7 @@
   <line x1="240" y1="278" x2="360" y2="296" stroke="#555" stroke-width="1.8" marker-end="url(#ar)"/>
   <text x="252" y="270" class="small">TRIG</text>
   <line x1="240" y1="314" x2="360" y2="346" stroke="#555" stroke-width="1.8" marker-end="url(#ar)"/>
-  <text x="252" y="338" class="small">ECHO ผ่าน 1k/2k</text>
+  <text x="252" y="338" class="small">ECHO ผ่าน 2.2k/3.3k</text>
 
   <rect x="760" y="110" width="200" height="76" rx="8" fill="#f3e8ff" stroke="#5b3f9e" stroke-width="2"/>
   <text x="860" y="136" text-anchor="middle">Servo SG90</text>
@@ -147,10 +147,10 @@
   <tr><td>Servo SG90</td><td>GND</td><td>ราง GND</td><td>-</td><td>กราวด์ร่วม</td></tr>
   <tr><td>HC-SR04 #1 (แมว)</td><td>VCC</td><td>ราง 5V</td><td>-</td><td>กินไฟกระชากตอนยิง</td></tr>
   <tr><td>HC-SR04 #1 (แมว)</td><td>TRIG</td><td>D6</td><td>12</td><td>ส่งพัลส์ 10 µs</td></tr>
-  <tr><td>HC-SR04 #1 (แมว)</td><td>ECHO</td><td>D7</td><td>13</td><td class="warn">ผ่านตัวแบ่ง 1k กับ 2k</td></tr>
+  <tr><td>HC-SR04 #1 (แมว)</td><td>ECHO</td><td>D7</td><td>13</td><td class="warn">ผ่านตัวแบ่ง 2.2k กับ 3.3k</td></tr>
   <tr><td>HC-SR04 #2 (ระดับ)</td><td>VCC</td><td>ราง 5V</td><td>-</td><td>-</td></tr>
   <tr><td>HC-SR04 #2 (ระดับ)</td><td>TRIG</td><td>D1</td><td>5</td><td>-</td></tr>
-  <tr><td>HC-SR04 #2 (ระดับ)</td><td>ECHO</td><td>D2</td><td>4</td><td class="warn">ผ่านตัวแบ่ง 1k กับ 2k</td></tr>
+  <tr><td>HC-SR04 #2 (ระดับ)</td><td>ECHO</td><td>D2</td><td>4</td><td class="warn">ผ่านตัวแบ่ง 2.2k กับ 3.3k</td></tr>
   <tr><td>HX711</td><td>VCC</td><td>3V3</td><td>-</td><td class="warn">ใช้ 3.3V เท่านั้น</td></tr>
   <tr><td>HX711</td><td>DT</td><td>D0</td><td>16</td><td>ขาเข้าล้วน ใช้ได้ไม่มีปัญหา</td></tr>
   <tr><td>HX711</td><td>SCK</td><td>D3</td><td>0</td><td>ต้องสูงตอนบูต บอร์ดมี pull-up ให้แล้ว</td></tr>
@@ -164,17 +164,17 @@
   <line x1="30" y1="60" x2="110" y2="60" stroke="#555" stroke-width="2"/>
   <text x="30" y="48" class="small">ECHO 5V</text>
   <rect x="110" y="46" width="70" height="28" fill="#fff" stroke="#333" stroke-width="2"/>
-  <text x="145" y="65" text-anchor="middle" class="small">1k</text>
+  <text x="145" y="65" text-anchor="middle" class="small">2.2k</text>
   <line x1="180" y1="60" x2="250" y2="60" stroke="#555" stroke-width="2"/>
   <circle cx="250" cy="60" r="4.5" fill="#333"/>
   <line x1="250" y1="60" x2="380" y2="60" stroke="#555" stroke-width="2"/>
   <text x="386" y="50" class="small">เข้า D7 หรือ D2</text>
   <rect x="228" y="82" width="54" height="28" fill="#fff" stroke="#333" stroke-width="2"/>
-  <text x="255" y="101" text-anchor="middle" class="small">2k</text>
+  <text x="255" y="101" text-anchor="middle" class="small">3.3k</text>
   <line x1="255" y1="60" x2="255" y2="82" stroke="#555" stroke-width="2"/>
   <line x1="282" y1="96" x2="380" y2="96" stroke="#333" stroke-width="2"/>
   <text x="386" y="100" class="small">GND</text>
-  <text x="30" y="122" class="small">5 × 2 ÷ (1 + 2) = 3.33V</text>
+  <text x="30" y="122" class="small">5 × 3.3 ÷ (2.2 + 3.3) = 3.00V</text>
 </svg>
 
 

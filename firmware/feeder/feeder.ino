@@ -5,8 +5,8 @@
 //
 // ขาที่ใช้
 //   servo      สัญญาณ D5   (GPIO14)
-//   ตรวจจับแมว  TRIG D6     (GPIO12)   ECHO D7 (GPIO13)  ผ่านตัวแบ่ง 1k/2k
-//   วัดระดับ    TRIG D1     (GPIO5)    ECHO D2 (GPIO4)   ผ่านตัวแบ่ง 1k/2k
+//   ตรวจจับแมว  TRIG D6     (GPIO12)   ECHO D7 (GPIO13)  ผ่านตัวแบ่ง 2.2k/3.3k
+//   วัดระดับ    TRIG D1     (GPIO5)    ECHO D2 (GPIO4)   ผ่านตัวแบ่ง 2.2k/3.3k
 //
 // วิธีใช้
 // 1. สร้าง secrets.h ข้างๆ ไฟล์นี้ ใส่ชื่อและรหัส Wi-Fi (ดู secrets.example.h)
