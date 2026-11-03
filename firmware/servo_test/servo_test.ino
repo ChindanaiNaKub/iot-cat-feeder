@@ -1,44 +1,34 @@
-// หามุมที่ servo หมุนได้จริง ก่อนเอาค่าไปใส่ OPEN_DEG ใน feeder.ino
+// ทดสอบหมุนไปกลับ: 0 -> TEST_DEG -> 0 วนซ้ำ เพื่อดูว่าเซอร์โวกลับมาปิดสนิทที่จุดเดิมได้
 //
 // สัญญาณ -> D5 (GPIO14), VCC -> VIN (5V), GND -> GND
 // จ่ายไฟจาก powerbank ไม่ใช่พอร์ตโน้ตบุ๊ก
-//
-// วิธีใช้
-// 1. อัปโหลดแล้วเปิด Serial Monitor 115200
-// 2. servo จะไล่มุมทีละ 10 องศา ค้างไว้ 1.2 วินาที แล้วพิมพ์มุมออกมา
-// 3. สังเกตตอนฝาเปิดสุด ถ้าได้ยินเสียงหึ่งๆ หรือฝาไม่ขยับแล้วแต่ servo ยังดัง
-//    แปลว่าชนระยะ ให้จดมุมก่อนหน้านั้นไว้
-// 4. เอาค่านั้นลบ 5 องศา ไปใส่ OPEN_DEG ใน feeder.ino
 
 #include <Servo.h>
 
 const int SERVO_PIN = D5;
-const int STEP_DEG = 10;
-const unsigned long HOLD_MS = 1200;
+const int HOME_DEG = 0;        // จุดปิดฝา ต้องตรงกับ CLOSED_DEG ใน feeder.ino
+const int TEST_DEG = 135;       // มุมที่ลอง แก้แล้วอัปโหลดใหม่
+const unsigned long HOLD_MS = 1000;
 
 Servo flap;
+
+void goTo(int deg) {
+  Serial.print("servo -> ");
+  Serial.print(deg);
+  Serial.println(" deg");
+  flap.write(deg);
+  delay(HOLD_MS);
+}
 
 void setup() {
   Serial.begin(115200);
   delay(200);
   Serial.println();
-  Serial.println("servo sweep: 0 -> 180 -> 0");
-  Serial.println("ฟังเสียงหึ่งๆ ตอนฝาชนระยะ แล้วจดมุมก่อนหน้านั้น");
   flap.attach(SERVO_PIN);
-  flap.write(0);
-  delay(800);
-}
-
-void stepTo(int angle) {
-  Serial.print("angle ");
-  Serial.println(angle);
-  flap.write(angle);
-  delay(HOLD_MS);
+  goTo(HOME_DEG);
 }
 
 void loop() {
-  for (int a = 0; a <= 180; a += STEP_DEG) stepTo(a);
-  delay(1500);
-  for (int a = 180; a >= 0; a -= STEP_DEG) stepTo(a);
-  delay(2500);
+  goTo(TEST_DEG);
+  goTo(HOME_DEG);
 }
