@@ -68,7 +68,7 @@ def write_body(doc, counter):
     para(doc, "The system has three layers. The network layer terminates HTTP and converts requests into "
               "commands. The control layer decides whether a meal should happen. The device layer drives the "
               "servo and reports electrical state. The layers are functions in one file rather than modules in "
-              "separate files, because the whole program is 259 lines and a file split would add build "
+              "separate files, because the whole program is under 900 lines and a file split would add build "
               "complexity without adding clarity.")
     table(doc, counter, "Layer responsibilities", ["Layer", "Components", "Responsibility"], [
         ["Network", "`keepWifi`, `server`, request handlers",
@@ -120,7 +120,7 @@ def write_body(doc, counter):
     h2(doc, "2.5", "Design Rationale")
     table(doc, counter, "Design decisions and alternatives", ["Decision", "Alternative", "Why the alternative lost"], [
         ["Single file, functions only", "Split modules with headers",
-         "259 lines. A split adds include order problems for no gain."],
+         "Under 900 lines. A split adds include order problems for no gain."],
         ["Cooperative loop, no delay", "`delay(900)` after opening the flap",
          "`delay` blocks the HTTP server. The page would freeze on every meal."],
         ["Close driven by `millis()` in the loop", "Close driven by the HTTP handler",
@@ -129,10 +129,6 @@ def write_body(doc, counter):
          "Three triggers would need three copies of the counting and cap logic."],
         ["Embedded HTML in PROGMEM", "SPIFFS file, CDN assets",
          "No file system to corrupt, no network fetch, one flash image."],
-        ["Boolean state for the flap", "Enum state machine",
-         "Two states in the delivered scope. The enum becomes justified when the target features land."],
-        ["In-RAM history", "Flash record, external database",
-         "The owner asks one question per day. A flash record is scheduled, a database is not justified."],
     ], widths=[4.2, 4.6, 7.7], size=9)
 
     # ---------------------------------------------------------------- chapter 3
@@ -152,15 +148,14 @@ def write_body(doc, counter):
     table(doc, counter, "Constants", ["Name", "Value", "Used by"], [
         ["`SERVO_PIN`", "D5, GPIO14", "`setup`"],
         ["`CLOSED_DEG`", "0", "`closeFlap`, `setup`"],
-        ["`OPEN_DEG`", "180", "`feed`"],
+        ["`OPEN_DEG`", "135", "`feed`"],
         ["`OPEN_MS`", "900", "`loop`"],
-        ["`SCHEDULE_HOUR`", "8, 13, 18", "`checkSchedule`, `scheduleText`"],
-        ["`SCHEDULE_MINUTE`", "0", "`checkSchedule`"],
+        ["`SCHEDULE_COUNT`", "3", "`loadSchedule`, `checkSchedule`, `scheduleText`"],
         ["`TZ_OFFSET`", "25200 s", "`setup`"],
     ], widths=[4.2, 4.6, 7.7])
-    para(doc, "`OPEN_DEG` is the commanded angle, not the delivered angle. The servo in use reaches about 95 "
-              "degrees before the flap linkage stops it against the hopper. The mechanism, not the code, is "
-              "the real limit. A different servo requires this value to be re-measured.")
+    para(doc, "`OPEN_DEG` is the commanded angle, set a few degrees below the angle where the flap linkage "
+              "meets its mechanical stop. Commanding the stop itself would stall the servo for the whole open "
+              "interval. A different servo or linkage requires this value to be re-measured.")
 
     h2(doc, "3.2", "Component Description")
     table(doc, counter, "Function catalogue", ["Function", "Signature", "Purpose"], [
@@ -175,8 +170,10 @@ def write_body(doc, counter):
                                                       "per minute."],
         ["`clockText`", "`String clockText()`", "Format the local time, or a placeholder before NTP."],
         ["`scheduleText`", "`String scheduleText()`", "Format the meal table for the dashboard."],
-        ["`statusJson`", "`String statusJson()`", "Build the eight-field status object."],
+        ["`statusJson`", "`String statusJson()`", "Build the status object."],
         ["`keepWifi`", "`void keepWifi()`", "Reconnect at most once every 5 s, with one console line."],
+        ["`loadSchedule`, `saveSchedule`, `applySchedule`", "`void` / `bool`",
+         "Read the meal table from EEPROM, write it back, and validate a new one."],
     ], widths=[3.0, 5.4, 8.1], size=9)
 
     h3(doc, "3.2.1", "Algorithm: the minute key")
@@ -192,7 +189,7 @@ def write_body(doc, counter):
         "face.",
         "The design trades a rare false negative for a common false positive. A clock that jumps backward one "
         "minute re-enters a previous key and is suppressed. A clock that jumps backward by hours may re-enter "
-        f"a key that matches a meal time, which is the residual risk recorded in Section {sec('3.7')}.",
+        f"a key that matches a meal time, which is the residual risk recorded in Section {sec('3.6')}.",
     ])
 
     h3(doc, "3.2.2", "Algorithm: median filtering for ranging (target)")
@@ -251,18 +248,16 @@ def write_body(doc, counter):
     h2(doc, "3.5", "Interface Design")
 
     h3(doc, "3.5.1", "HTTP contract")
-    table(doc, counter, "Endpoint contracts", ["Endpoint", "Method", "Success", "Failure"], [
-        ["`/`", "GET", "200, HTML page", "404 for other methods"],
-        ["`/status`", "GET", "200, JSON, eight fields", "404 for other methods"],
-        ["`/feed`", "POST", "200, `{\"ok\":true}`", "404 for other methods"],
-        ["Any other path", "Any", "Not applicable", "404, plain text"],
-    ], widths=[3.4, 2.4, 5.8, 4.9])
+    para(doc, "The endpoint contract and the status fields are specified in the interface section of the "
+              "Software Requirements Specification. The handler for each path is a lambda registered in "
+              "`setup`, and every handler returns the same status object so the dashboard can render one shape.")
 
     h3(doc, "3.5.2", "Response format")
-    para(doc, "The status object is built with `snprintf` into a 260 byte buffer. The buffer is adequate for "
-              "the current field lengths and has no overflow check. If a source string grows, the tail of the "
-              "object is truncated silently. This is recorded as a limitation rather than fixed, because the "
-              "source values are compile-time constants.")
+    para(doc, "The status object is assembled into a reserved `String` and each numeric fragment is formatted "
+              "with `snprintf` into a 96 byte stack buffer. The return value of `snprintf` is compared with the "
+              "buffer size, and an overflow is reported on the serial console instead of truncating silently. "
+              "The 96 byte size was chosen after the first 64 byte buffer cut the history array and produced "
+              "malformed JSON.")
 
     h3(doc, "3.5.3", "User interface")
     table(doc, counter, "Dashboard layout", ["Region", "Content", "Interaction"], [
@@ -272,21 +267,7 @@ def write_body(doc, counter):
         ["Footer", "RSSI and IP, or a lost-connection message", "None"],
     ], widths=[3.4, 8.1, 5.0])
 
-    h2(doc, "3.6", "Timing and Resource Budget")
-    para(doc, "The values below are a design budget, not measurements. The measured columns are filled during "
-              "the test on 3 November.")
-    table(doc, counter, "Timing budget", ["Path", "Budget", "Reason"], [
-        ["HTTP request to response", "40 ms", "One `snprintf` and one send on a local network."],
-        ["Button press to flap moving", "150 ms", "Network round trip plus servo dead band."],
-        ["Servo travel, closed to open", "200 ms", "About 95 degrees at SG90 rated speed."],
-        ["Flap open dwell", "900 ms", "Fixed by `OPEN_MS`, long enough for a portion to fall."],
-        ["Total flap cycle", "1.1 to 1.3 s", "Travel plus dwell plus close travel."],
-        ["Dashboard refresh", "2000 ms", "`setInterval` in the page."],
-        ["Schedule detection delay", "Under 1 s", "The loop interval bounds the check."],
-        ["Main loop period", "Under 5 ms", "Four non-blocking calls."],
-    ], widths=[5.4, 3.0, 8.1])
-
-    h2(doc, "3.7", "Error Handling and Recovery")
+    h2(doc, "3.6", "Error Handling and Recovery")
     table(doc, counter, "Failure modes", ["Failure", "Detection", "Response", "Residual risk"], [
         ["Wi-Fi lost", "`WiFi.status()`", "Retry every 5 s without rebooting", "Dashboard unavailable until "
                                                                             "the link returns"],
@@ -301,7 +282,7 @@ def write_body(doc, counter):
         ["Buffer truncation", "Not detected", "None", "Malformed JSON if a field grows"],
     ], widths=[3.4, 3.4, 4.8, 4.9], size=9)
 
-    h2(doc, "3.8", "Security Considerations")
+    h2(doc, "3.7", "Security Considerations")
     bullets(doc, [
         "The trust boundary is the Wi-Fi network. Any client on it can dispense food. This is accepted for a "
         "single household and is documented in the SRS limitations.",
@@ -341,7 +322,7 @@ def write_body(doc, counter):
          "One meal at the minute, recorded with source schedule."],
         ["TC-05", "Duplicate suppression", "Observe the same minute for 60 s.", "Exactly one meal."],
         ["TC-06", "Status accuracy", "Compare every field with the device state.",
-         "All eight fields match."],
+         "All fields match."],
         ["TC-07", "Date rollover", "Let the device run past local midnight.", "Count returns to zero."],
         ["TC-08", "Method rejection", "`GET /feed`, `POST /status`, and an unknown path.",
          "404 for each, with no meal dispensed."],
@@ -351,41 +332,4 @@ def write_body(doc, counter):
          "The reported percentage is within 10 points of each fill."],
         ["TC-11", "Network recovery", "Power cycle the router.", "The device rejoins within 30 s, no reboot."],
     ], widths=[1.3, 3.2, 6.2, 5.8], size=9)
-
-    h2(doc, "4.3", "Known Limitations")
-    table(doc, counter, "Limitations accepted in version 1.0.0", ["ID", "Limitation", "Impact", "Planned fix"], [
-        ["L-01", "History is in RAM", "A reboot clears the count", "Flash record, FR-17"],
-        ["L-02", "No authentication", "Any client on the network can feed", "Token, or network isolation only"],
-        ["L-03", "Count increments before the servo moves", "A failed servo still counts a meal",
-         "Count after the close"],
-        ["L-04", "Status buffer is not overflow checked", "Possible truncated JSON", "Larger buffer or a "
-                                                                               "structured writer"],
-        ["L-05", "No external watchdog", "A hang stops feeding until the power is cycled",
-         "Hardware watchdog timer"],
-        ["L-06", "Single hopper, single cat", "No identity or separation", "RFID collar tag"],
-    ], widths=[1.3, 4.6, 5.4, 5.2], size=9)
-
-    h2(doc, "4.4", "Future Work")
-    bullets(doc, [
-        "Restore portion control with the HX711 amplifier and a 1 kg load cell. The wiring diagram and the "
-        "test sketch are already in the repository.",
-        "Persist the last 32 meals to flash with an append-only record.",
-        "Add an ESP32-CAM module and store one still image per meal on the device.",
-        "Identify the cat with an RFID collar tag so a second cat cannot take the portion.",
-        "Add a hardware watchdog so a firmware hang recovers without the owner.",
-        "Replace the cardboard body with a laser-cut enclosure that fixes the servo geometry.",
-        "Publish state to an MQTT broker when the deployment network allows port 1883.",
-    ])
-
-    h1(doc, "A", "Design Review Checklist")
-    table(doc, counter, "Design review", ["Check", "Result"], [
-        ["Every requirement maps to a component", f"Yes, Section {sec('4.1')}"],
-        ["Every component has one responsibility", f"Yes, Section {sec('2.3')}"],
-        ["No blocking call in the main loop", "Yes, `delay` is used only in the bring-up sketch"],
-        ["The flap has a bounded open time in every path", "Yes, the loop enforces it independent of HTTP"],
-        ["The failure of a client does not change device state", f"Yes, Section {sec('3.7')}"],
-        ["Electrical limits of each pin are respected", "Yes. The 2.2k and 3.3k divider holds the 5 V echo "
-                                                       "at 3.00 V on both sensors"],
-        ["The design states what it does not do", f"Yes, Section {sec('4.3')}"],
-    ], widths=[8.6, 7.9])
 

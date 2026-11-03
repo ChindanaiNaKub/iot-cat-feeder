@@ -4,11 +4,9 @@ import pathlib
 
 import meta
 from docx_common import (
-    HEADINGS, sec, Numbering, cover, h1, h2, h3, para, bullets, numbered, new_document, save,
-    table, table_of_contents, figure,
+    HEADINGS, Numbering, cover, h1, h2, h3, para, bullets, numbered, new_document, save,
+    table, table_of_contents,
 )
-
-FIG = pathlib.Path(__file__).parent / "figures"
 
 
 def build(out_dir, toc_entries=None):
@@ -57,8 +55,7 @@ def write_body(doc, counter):
               "answers, and a flap that must never stay open.")
 
     h2(doc, "1.3", "Target Users and Intended Experience")
-    para(doc, "The system has two users with very different needs. The design is judged on whether both are "
-              "served without one damaging the other.")
+    para(doc, "Two users with different needs must both be served without one damaging the other.")
 
     h3(doc, "1.3.1", "Persona: The owner")
     table(doc, counter, "Owner persona", ["Attribute", "Detail"], [
@@ -124,56 +121,7 @@ def write_body(doc, counter):
     # ---------------------------------------------------------------- chapter 2
     h1(doc, 2, "Review and Analysis")
 
-    h2(doc, "2.1", "Business and Software Review")
-    para(doc, "The review below is written for a device that already exists in commercial form. The project is "
-              "not trying to win on features. It is trying to win on independence, repairability, and cost.")
-
-    h3(doc, "2.1.1", "Strengths")
-    bullets(doc, [
-        "**No cloud dependency.** The dashboard is served by the device. The system keeps working when the "
-        "internet is down, and it works in a room with no router if the access point is provided by a phone.",
-        "**Low cost.** The bill of materials is roughly one tenth of a mid-range commercial feeder, because "
-        "there is no enclosure injection moulding, no app, and no subscription.",
-        "**Measured portion instead of a timer.** Most low-cost feeders open a gate for a fixed time and trust "
-        "gravity. A load cell turns the same mechanism into a closed loop, which is the difference between a "
-        "timer and a controller.",
-        "**Documented and repairable.** One firmware file, one wiring page, and one design document. A failed "
-        "servo is a 100 baht replacement, not a warranty claim.",
-    ])
-
-    h3(doc, "2.1.2", "Weaknesses")
-    bullets(doc, [
-        "**Single point of failure.** If the ESP8266 reboots mid-cycle the meal is lost. There is no watchdog "
-        "external to the board.",
-        "**History lives in RAM.** A power cut erases the daily count. This is a known limitation and is "
-        "listed in the requirements.",
-        "**The enclosure is cardboard.** It is adequate for a demonstration and honest about being a "
-        "prototype, but it is not cat-proof over months.",
-        "**One cat, one hopper.** There is no identity and no separation if a second cat uses the device.",
-    ])
-
-    h3(doc, "2.1.3", "Opportunities")
-    bullets(doc, [
-        "**Presence-aware feeding.** The same ultrasonic sensor that measures the hopper level can detect an "
-        "approaching cat, so one hardware decision serves two requirements.",
-        "**Local-first pattern.** The firmware is a small, readable example of a device that serves its own UI, "
-        "which is useful for other course projects and for the owner's own repairs.",
-        "**Data without a database.** A short ring buffer in flash is enough to answer the owner's only "
-        "question, which is whether the cat was fed today.",
-    ])
-
-    h3(doc, "2.1.4", "Threats")
-    bullets(doc, [
-        "**Servo current draw.** A stalled servo can pull enough current to brown out the board. This was "
-        "observed during bring-up and is the main electrical risk.",
-        "**Wi-Fi band mismatch.** The ESP8266 is 2.4 GHz only. A 5 GHz-only phone hotspot cannot be used.",
-        "**Sensor false positives.** A reflective hopper wall can fool an infrared proximity sensor into "
-        "reporting food that is not there. This is why ultrasonic ranging is chosen for the level measurement.",
-        "**Scope pressure.** A five-day window invites feature creep. The scope rule in 1.4 exists for this "
-        "reason.",
-    ])
-
-    h2(doc, "2.2", "Tool and Technology Review")
+    h2(doc, "2.1", "Tool and Technology Review")
     para(doc, "Each decision below was made against at least one alternative. The rejected option is recorded "
               "so the reader can see the trade that was accepted.")
     table(doc, counter, "Technology decisions", ["Decision", "Chosen", "Rejected", "Rationale"], [
@@ -199,7 +147,7 @@ def write_body(doc, counter):
          "deadline. Open-loop timing ships, and the closed loop moves to Future Work."],
     ], widths=[2.9, 3.4, 3.4, 6.8], size=9)
 
-    h2(doc, "2.3", "Risk Analysis")
+    h2(doc, "2.2", "Risk Analysis")
     table(doc, counter, "Risk register", ["ID", "Risk", "Likelihood", "Impact", "Mitigation"], [
         ["R-01", "Servo stall browns out the board and reboots it mid-meal", "High", "High",
          "Power the servo from the powerbank rail, not from 3V3. Add a 470 uF capacitor across VIN and GND. "
@@ -212,107 +160,12 @@ def write_body(doc, counter):
          "is prevented by a minute key."],
         ["R-04", "Ultrasonic readings oscillate on a kibble surface", "High", "Medium",
          "Sample ten times per measurement and use the median. Reject echoes outside the hopper depth."],
-        ["R-05", "Load cell work is not finished before the deadline", "Medium", "Medium",
-         "Occurred on 2 November. The amplifier header pins were never soldered, so portion control moved to "
-         "Future Work and the slot went to the 24 hour schedule test."],
-        ["R-06", "Wi-Fi in the examination room blocks the device", "Low", "High",
+        ["R-05", "Wi-Fi in the examination room blocks the device", "Low", "High",
          "The dashboard is reachable in the local network, so the demonstration does not depend on internet "
          "access. A phone hotspot is the fallback."],
-        ["R-07", "Parts do not arrive before 30 October", "Medium", "High",
-         "The firmware already meets the schedule and dashboard requirements without any sensor. The sensors "
-         "are additive, not load bearing."],
     ], widths=[1.2, 4.6, 2.0, 1.8, 6.9], size=9)
 
-    # ---------------------------------------------------------------- chapter 3
-    h1(doc, 3, "Product Perspective")
-
-    h2(doc, "3.1", "Product Perspective")
-    para(doc, "The device is a standalone appliance with a browser interface. It is not a component of a "
-              "larger platform, and it does not report to a server. This choice is deliberate. A self-hosted "
-              "device has a smaller attack surface, a smaller failure surface, and a demonstration that "
-              "survives a broken internet connection.")
-    para(doc, "Inside the appliance there are four responsibilities. The web layer turns HTTP requests into "
-              "commands and status. The scheduler compares local time against a fixed table of meals. The "
-              "actuation layer drives the servo. The state layer records what happened. The important design "
-              "rule is that every feeding path, whether from the browser, the clock, or a sensor, passes "
-              "through one function so that counting and safety rules cannot diverge.")
-
-    h2(doc, "3.2", "Product Features")
-    table(doc, counter, "Feature summary", ["ID", "Feature", "Actor", "Status"], [
-        ["F1", "Scheduled feeding at 08:00, 13:00, and 18:00 using NTP time", "System clock", "Delivered"],
-        ["F2", "On-demand feeding from the web dashboard", "Owner", "Delivered"],
-        ["F3", "Flap status, daily count, last meal, and connection quality", "Owner", "Delivered"],
-        ["F4", "Cat presence detection and presence-triggered meal", "Cat", "Parts received"],
-        ["F5", "Hopper level reported as a percentage of depth", "System", "Parts received"],
-    ], widths=[1.2, 9.3, 3.0, 3.0])
-
-    h2(doc, "3.3", "System Architecture")
-    para(doc, "The context diagram below shows every entity that the device exchanges energy or data "
-              "with. Dashed elements are planned and are marked as such so the diagram does not claim hardware "
-              "that is not on the bench.")
-    figure(doc, counter, str(FIG / "context.png"), "Context diagram of the proposed system.", width_cm=16.5)
-
-    h2(doc, "3.4", "Use Case Overview")
-    para(doc, "Five use cases are identified. UC-01 to UC-03 are delivered. UC-04 is the presence target. "
-              "UC-05 is the portion target, which moved to Future Work on 2 November.")
-    figure(doc, counter, str(FIG / "usecase.png"), "Use case diagram. Dashed use cases are planned.",
-           width_cm=16.5)
-
-    # ---------------------------------------------------------------- chapter 4
-    h1(doc, 4, "Quality Planning")
-    para(doc, "Quality requirements are grouped by category and given identifiers so the design and the test "
-              "plan can refer to them. The full text of each requirement is in the SRS.")
-    table(doc, counter, "Quality requirement summary", ["Category", "ID", "Requirement in one line"], [
-        ["Performance", "NFR-PM-01", "Dashboard responds within 2 seconds on the same network."],
-        ["Performance", "NFR-PM-02", "Presence detection dispenses within 2 seconds of the cat entering range."],
-        ["Reliability", "NFR-RL-01", "Flap never remains open longer than 3 seconds."],
-        ["Reliability", "NFR-RL-02", "Device reconnects to Wi-Fi without a reboot."],
-        ["Reliability", "NFR-RL-03", "Schedule works for 24 hours without drift beyond 1 minute."],
-        ["Usability", "NFR-UH-01", "Dashboard is readable on a 375 px wide screen without zoom."],
-        ["Usability", "NFR-UH-02", "A first-time user can feed the cat without instructions."],
-        ["Security", "NFR-SEC-01", "Wi-Fi credentials are never committed to the repository."],
-        ["Security", "NFR-SEC-02", "Only the documented HTTP methods are accepted."],
-        ["Maintainability", "NFR-OP-01", "The firmware builds with the Arduino ESP8266 core and documented libraries."],
-        ["Constraint", "NFR-CP-01", "Runs from a 5 V, 2 A powerbank with no laptop attached."],
-        ["Constraint", "NFR-CP-02", "Operates at 2.4 GHz Wi-Fi only."],
-    ], widths=[3.2, 3.2, 10.1])
-
-    # ---------------------------------------------------------------- chapter 5
-    h1(doc, 5, "Limits, Milestones, and Deliverables")
-
-    h2(doc, "5.1", "Limits")
-    bullets(doc, [
-        "The submission deadline is 4 November 2026. Any feature not tested by 2 November is descoped.",
-        "The build is limited to parts already owned plus a sensor budget of about 500 baht.",
-        "The enclosure is built from cardboard and a food-safe bowl. Machining and 3D printing are not "
-        "available in the time window.",
-        "The device runs on a single board with no server, no database, and no cloud account.",
-    ])
-
-    h2(doc, "5.2", "Milestones")
-    table(doc, counter, "Milestones", ["Date", "Milestone", "Exit criterion"], [
-        ["30 Oct 2026", "Documents and parts order", "Proposal, SRS, and SDD drafted. Sensors ordered."],
-        ["31 Oct 2026", "Requirements frozen", "Requirement set baselined in version control."],
-        ["1 Nov 2026", "Presence detection integrated", "Cat detected in 16 of 20 trials."],
-        ["2 Nov 2026", "Portion control descoped, 24 hour test begun",
-         "Portion control moved to Future Work. The scheduled feeding test starts and runs for 24 hours."],
-        ["3 Nov 2026", "System test and evidence", "All test cases executed. Photos and video captured."],
-        ["4 Nov 2026", "Submission", "Repository tagged, report submitted."],
-    ], widths=[3.2, 5.2, 8.1])
-
-    h2(doc, "5.3", "Deliverable Items")
-    numbered(doc, [
-        "The assembled feeder, working from a powerbank.",
-        "Firmware source in `firmware/feeder/feeder.ino` and the servo bring-up sketch in "
-        "`firmware/servo_test/servo_test.ino`.",
-        "Wiring diagram in `docs/wiring_nodemcu_servo.html`.",
-        "This proposal, the SRS, and the SDD.",
-        "Test records with photographs.",
-        "The output and discussion chapter with measured results.",
-        "The conclusion and future work chapter.",
-    ])
-
-    h2(doc, "5.4", "Budget")
+    h2(doc, "2.3", "Estimated Cost")
     para(doc, "Prices are estimates from general retail listings and are not yet confirmed with the supplier.")
     table(doc, counter, "Estimated bill of materials", ["Item", "Quantity", "Unit (baht)", "Total (baht)"], [
         ["NodeMCU v3 (already owned)", "1", "0", "0"],
@@ -326,15 +179,4 @@ def write_body(doc, counter):
         ["**Total**", "", "", "**380**"],
     ], widths=[7.6, 2.4, 3.0, 3.5])
 
-    h2(doc, "5.5", "Future Work")
-    bullets(doc, [
-        "Restore portion control with the HX711 amplifier and a 1 kg load cell. The wiring diagram and the "
-        "test sketch are already in the repository.",
-        "Move the daily history into flash so it survives a power cut.",
-        "Add an ESP32-CAM module for a still image per meal, so the owner can confirm the cat ate rather than "
-        "the bowl.",
-        "Identify the cat with an RFID collar tag so a second cat cannot take the portion.",
-        "Add a hopper level alarm that publishes to the dashboard instead of only showing a value.",
-        "Replace the cardboard enclosure with a printed or laser-cut body.",
-    ])
 

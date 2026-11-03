@@ -37,9 +37,12 @@ def write_body(doc, counter):
         "callback, so a client that disconnects mid-request cannot leave the flap open.",
         "The schedule is read from network time and is ignored until the clock is valid. A minute key "
         "suppresses a second meal inside the same calendar minute.",
+        "The three meal times are editable from the dashboard and stored in EEPROM, so a new schedule "
+        "survives a power cut without a reflash.",
         "Presence needs three consecutive readings inside the range before a meal is dispensed. A cooldown and "
         "a daily cap bound how often the cat can trigger a meal.",
-        "Hopper level is the median of the last five samples, mapped onto a measured empty and full depth.",
+        "Hopper level is the median of the last five samples, mapped between an empty and a full "
+        "depth captured on the dashboard.",
         "The dashboard is one response compiled into the binary. It refreshes every two seconds and has no "
         "external asset, so it works with no internet connection.",
     ])
@@ -49,7 +52,7 @@ def write_body(doc, counter):
         ["Flap closed angle", "0 degrees", "`CLOSED_DEG`"],
         ["Flap open angle", "135 degrees", "`OPEN_DEG`"],
         ["Flap dwell before the close", "900 ms", "`OPEN_MS`"],
-        ["Scheduled meals", "08:00, 13:00, 18:00", "`SCHEDULE_HOUR`"],
+        ["Scheduled meals", "08:00, 13:00, 18:00, editable", "`DEFAULT_SCHEDULE`"],
         ["Presence range", "60 cm", "`NEAR_CM`"],
         ["Presence cooldown", "30 minutes", "`COOLDOWN_MS`"],
         ["Presence daily cap", "6 meals", "`PRESENCE_CAP`"],
@@ -122,10 +125,15 @@ def write_body(doc, counter):
 
     h2(doc, "3.4", "Hopper level")
     para(doc, "The level reading is a distance, not a mass, and the surface of dry food is not flat. The "
-              "median filter removes the worst of the scatter, and the percentage is mapped onto a span "
-              "measured on the assembled hopper rather than an assumed one. A percentage is therefore a coarse "
-              "signal. It answers whether the owner needs to refill, which is the question the dashboard is "
-              "answering, and it does not claim to answer how many meals remain.")
+              "median filter removes the worst of the scatter, and the percentage is mapped between an empty "
+              "and a full depth captured from the dashboard rather than assumed. A percentage would therefore "
+              "be a coarse signal. It answers whether the owner needs to refill, not how many meals remain.")
+    para(doc, "On the assembled unit the sensor does not deliver that signal. It was fixed in place before its "
+              "aim was checked, and when the glue set the beam landed on the floor of the box instead of the "
+              "hopper. The reading stays at the depth of that floor whatever is poured in, and no pair of "
+              "captured depths turns it into a level. The paragraph above describes the design, not a measured "
+              "result. Moving the mount is the whole of the remaining work, because the firmware path exists "
+              "and takes its two end points from the dashboard.")
 
     h2(doc, "3.5", "The portion control decision")
     para(doc, "Portion control by weight was in the original scope and left it on 2 November. The header pins "
@@ -152,8 +160,8 @@ def write_body(doc, counter):
         "and the response was malformed. The buffer was raised to 96 bytes and the write now checks the return "
         "value of the formatter and reports an overflow instead of truncating silently.",
         "**Servo travel.** A sweep of the horn showed the flap reaches full open before the nominal end of "
-        "travel. The open angle was set to the measured value, which stops the servo stalling against the "
-        "hopper wall for the whole open interval.",
+        "travel. The open angle was set just below the measured stop, which keeps the servo from stalling "
+        "against the hopper wall for the whole open interval.",
     ])
 
     h2(doc, "3.7", "Limitations and threats to validity")
@@ -163,7 +171,7 @@ def write_body(doc, counter):
         "and therefore the drift.",
         "The presence test is performed by a person walking past the sensor, not by the cat. A cat moves lower "
         "and more obliquely, so the measured accuracy is an upper bound.",
-        "The level test uses food poured to measured depths. Settling and bridging change the surface, so the "
-        "reading at a given depth varies with how the hopper was filled.",
+        "The level sensor is mounted where its beam misses the hopper, so the level test was not run and no "
+        "percentage is reported. The mount is the only thing between the design and a working gauge.",
         "There is no authentication. Any client on the same network can dispense a meal.",
     ])

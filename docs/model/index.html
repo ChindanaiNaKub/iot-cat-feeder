@@ -404,7 +404,7 @@ const PARTS = [
   {
     id: 'servo', group: 'actuator', name: 'Servo SG90', en: 'Servo motor',
     status: 'have', explode: [13, 3, 3], pos: [7.2, 11.4, 1.4],
-    note: 'หมุนประมาณ 95 องศาจริง บอร์ดสั่ง 180 ก็จะชน ต้องตั้งค่า OPEN_DEG ตามที่วัดได้',
+    note: 'บอร์ดสั่ง 135 องศา (OPEN_DEG) ตั้งไว้ต่ำกว่าจุดที่ฝาชนตัวจำกัดการหมุนเล็กน้อย เพื่อไม่ให้ servo ค้างเกร็ง',
     build: () => {
       const g = new THREE.Group();
       g.add(box(3.2, 2.4, 2.6, M.servo));

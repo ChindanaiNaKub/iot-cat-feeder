@@ -14,29 +14,33 @@ def write_body(doc, counter):
               "the flap on every path without depending on the client, and records the meal count, the last "
               "meal, and its trigger source on a dashboard that needs no internet connection.")
     para(doc, "The scope was cut once, deliberately. Portion control by weight was removed on 2 November when "
-              "the amplifier module could not be finished in the remaining time. The version that ships does "
-              "not claim that feature, and the report records the decision instead of hiding it.")
+              "the amplifier module could not be finished in time, and the report records the decision rather "
+              "than hiding it.")
+    para(doc, "One sensor did not survive assembly. The level sensor was fixed in place before its aim was "
+              "checked, and when the glue set the beam landed on the box floor instead of the hopper, so the "
+              "percentage never follows the food. The report records the failure in the limitations rather than "
+              "printing a level it could not measure.")
 
     h2(doc, "1.2", "Against the objectives")
     table(doc, counter, "Objectives and outcome", ["Objective", "Outcome", "Where it is shown"], [
         ["Three meals a day from network time",
          "Delivered. The schedule is gated on a valid clock and suppressed per minute.",
-         "Part II, F1; Part III, 3.2.1; results table"],
+         "Part II, F1; Part III, minute key algorithm; results table"],
         ["A dashboard served in under two seconds",
          "Delivered. One compiled response, no external asset, two second refresh.",
          "Part II, NFR-PM-01; results table"],
         ["The flap closes on every code path",
          "Delivered. The close runs from the main loop and cannot be stranded by a client.",
-         "Part III, 3.4.1; test TC-03"],
+         "Part III, manual feeding flow; test TC-03"],
         ["A record of when the cat was fed",
          "Delivered. Five meals in RAM, with time and trigger source, on the dashboard.",
-         "Part II, F3; Part III, 3.1"],
+         "Part II, F3; Part III, data design"],
         ["Presence detection inside 60 cm",
          "Delivered in firmware, with median filtering and three-reading confirmation. Accuracy is in the "
          "results table.", "Part II, F4; test TC-09"],
         ["Rebuildable from the repository",
          "Delivered. Wiring page, pin map, bring-up sketches, and this volume.",
-         "Repository; Part III, chapter 3"],
+         "Repository; Part III, detailed design"],
     ], widths=[5.0, 7.0, 4.5])
 
     h2(doc, "1.3", "Lessons")
@@ -44,24 +48,21 @@ def write_body(doc, counter):
         "**A requirement that depends on a part is a schedule risk until the part is on the bench.** The load "
         "cell was planned as a target feature for weeks. The blocker was found two days before the deadline, "
         "and by then there was no time left to solder, calibrate, and test it.",
-        "**Compute the divider, do not copy it.** 1k and 2k gives 3.33 V, and 2.2k and 3.3k gives 3.00 V. Both "
-        "are inside the pin limit, and only one leaves margin for the tolerance of the resistors.",
         "**A fixed size buffer is a correctness bug.** The status response was malformed for a reason no test "
         "covered, because the test checked the fields that were present and not the ones that were cut off.",
-        "**Keep the safety action out of the network callback.** The flap close is a loop condition, so the "
-        "network cannot hold it open. The same pattern would carry a mass-controlled close when the load cell "
-        "returns.",
-        "**A percentage is an answer to a question.** The hopper level reports whether to refill. Describing it "
-        "as an amount, or as a weight, would have been a stronger claim than the sensor supports.",
     ])
 
     h2(doc, "1.4", "Limitations accepted in this version")
     bullets(doc, [
         "The meal history is lost on reboot.",
         "Meal size is open loop and follows the flap dwell, not the mass dispensed.",
+        "The meal count increments before the servo moves, so a failed servo still counts a meal.",
+        "The hopper level is not delivered. The level sensor was glued down before its aim was checked, so the "
+        "beam reads the box floor and the percentage does not change with the food. The mount has to be moved "
+        "and the depth captured again before the reading means anything, and until then the dashboard reports "
+        "no level.",
         "There is no authentication, so the device is safe only on a trusted network.",
-        "The enclosure is cardboard, and the servo linkage is taped rather than machined.",
-        "One hopper and one cat are supported, with no way to tell two cats apart.",
+        "The enclosure is cardboard, the servo linkage is taped, and one hopper serves one cat.",
     ])
 
     # ---------------------------------------------------------------- chapter 2

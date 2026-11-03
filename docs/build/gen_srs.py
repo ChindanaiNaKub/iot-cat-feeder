@@ -4,17 +4,11 @@ import pathlib
 
 import meta
 from docx_common import (
-    HEADINGS, sec, Numbering, cover, h1, h2, h3, para, bullets, numbered, new_document, save,
+    HEADINGS, sec, Numbering, cover, h1, h2, h3, para, bullets, new_document, save,
     table, table_of_contents, figure,
 )
 
 FIG = pathlib.Path(__file__).parent / "figures"
-
-DOC_CONTROL = [
-    ["Version", "Date", "Author", "Change"],
-    ["0.9", "30 October 2026", "C. Jaiman", "First draft in Thai, requirements only."],
-    ["1.0.0", "4 November 2026", "C. Jaiman", "Baselined. Sensor requirements marked as target."],
-]
 
 
 def use_case(doc, counter, code, title, fields):
@@ -66,12 +60,9 @@ def write_body(doc, counter):
 
     h2(doc, "1.3", "Product Perspective")
     para(doc, "The device is a standalone system. It replaces the manual act of pouring food, not a software "
-              "component inside another product.")
-    figure(doc, counter, str(FIG / "context.png"), "System context. Dashed elements are planned.",
-           width_cm=16.5)
-    para(doc, "The owner is the only human actor. The clock is an external service that provides the time "
-              "reference. The cat is an environmental actor whose position may become an input once the "
-              "presence requirement is delivered.")
+              "component inside another product. The owner is the only human actor. The clock is an external "
+              "service that provides the time reference. The cat is an environmental actor whose position "
+              "becomes an input through the presence requirement.")
 
     h2(doc, "1.4", "Product Functions")
     table(doc, counter, "Product functions", ["ID", "Function", "Summary", "Status"], [
@@ -115,29 +106,13 @@ def write_body(doc, counter):
          "The dashboard cannot be reached by name or address."],
     ], widths=[1.4, 9.0, 6.1])
 
-    h2(doc, "1.8", "Acronyms and Definitions")
-
-    h3(doc, "1.8.1", "Acronyms")
-    table(doc, counter, "Acronyms", ["Acronym", "Meaning"], [
-        ["AP", "Access point"],
-        ["GPIO", "General purpose input and output"],
-        ["HTTP", "Hypertext Transfer Protocol"],
-        ["HX711", "24-bit load cell amplifier"],
-        ["JSON", "JavaScript Object Notation"],
-        ["NTP, SNTP", "Network Time Protocol and its simplified form"],
-        ["PWM", "Pulse width modulation"],
-        ["SRS", "Software Requirements Specification"],
-        ["SDD", "Software Design Description"],
-        ["UART", "Universal asynchronous receiver and transmitter"],
-    ], widths=[4.0, 12.5])
-
-    h3(doc, "1.8.2", "Definitions")
+    h2(doc, "1.8", "Definitions")
     table(doc, counter, "Definitions", ["Term", "Definition"], [
         ["Meal", "One dispense cycle, defined as one flap open event followed by an automatic close."],
         ["Flap", "The servo-driven cover that gates the hopper outlet."],
         ["Hopper", "The container that holds dry food above the flap."],
         ["Schedule minute", "A minute of local time that appears in the configured meal table."],
-        ["Source", "The trigger of a meal: `manual`, `schedule`, or `presence`."],
+        ["Source", "The trigger of a meal: the web button, the schedule, or the presence sensor."],
         ["Minute key", "An integer that identifies one calendar minute, used to prevent duplicate meals."],
         ["Parts received", "The hardware for this requirement is on the bench and wired. The firmware "
                            "integration and the acceptance test are still outstanding."],
@@ -152,12 +127,7 @@ def write_body(doc, counter):
         ["HC-SR04 ultrasonic sensor datasheet", "Range, beam angle, and supply voltage limits."],
         ["HX711 datasheet", "Clock timing and gain selection."],
         ["SG90 servo datasheet", "Stall current and torque limits."],
-        ["Project rubric, Idea 50 / Circuit 30 / Doc 20", "Coverage check in Appendix A."],
     ], widths=[8.0, 8.5])
-
-    h2(doc, "1.10", "Document Control")
-    table(doc, counter, "Revision history", ["Version", "Date", "Author", "Change"],
-          DOC_CONTROL[1:], widths=[2.4, 3.8, 3.0, 7.3])
 
     # ---------------------------------------------------------------- chapter 2
     h1(doc, 2, "Specification Requirements")
@@ -173,6 +143,7 @@ def write_body(doc, counter):
         ["Time zone", "UTC+7, no daylight saving"],
         ["Time sources", "`pool.ntp.org`, `time.nist.gov`"],
         ["Duplicate suppression", "One meal per calendar minute"],
+        ["Editing", "Dashboard form, stored in EEPROM"],
         ["Behaviour before time is valid", "Scheduler disabled, dashboard shows `--:--:--`"],
     ], widths=[5.2, 11.3])
 
@@ -204,25 +175,11 @@ def write_body(doc, counter):
     para(doc, "An ultrasonic sensor aimed at the approach path detects a cat within 60 cm. A confirmed "
               "detection dispenses one meal, subject to a cooldown and a daily cap. Confirmation requires "
               "three consecutive readings inside range, which prevents a single stray echo from feeding the cat.")
-    table(doc, counter, "F4 parameters", ["Parameter", "Value"], [
-        ["Detection range", "60 cm"],
-        ["Confirmation", "3 consecutive readings"],
-        ["Cooldown after a presence meal", "30 minutes"],
-        ["Daily cap", "Configurable, default 6"],
-        ["Sensor", "HC-SR04 or HC-SR04P, echo divided to 3.3 V"],
-    ], widths=[5.2, 11.3])
 
     h3(doc, "2.1.5", "F5: Hopper Level Monitoring")
     para(doc, "A second ultrasonic sensor aimed down into the hopper estimates the remaining food as a "
               "percentage of the usable depth. Portion control by weight moved to Future Work on 2 November, "
               "when the amplifier header pins were found to be unsoldered.")
-    table(doc, counter, "F5 parameters", ["Parameter", "Value"], [
-        ["Measurement", "Distance from the lid to the food surface"],
-        ["Level reporting", "Percentage of usable hopper depth"],
-        ["Empty depth", "18 cm, measured on the assembled hopper"],
-        ["Full depth", "4 cm, measured on the assembled hopper"],
-        ["Filtering", "Median of the last five samples"],
-    ], widths=[5.2, 11.3])
 
     h2(doc, "2.2", "Use Case Diagram")
     figure(doc, counter, str(FIG / "usecase.png"),
@@ -267,7 +224,7 @@ def write_body(doc, counter):
         ("Goal", "Confirm that the cat has been fed and inspect the device clock."),
         ("Precondition", "The device is reachable."),
         ("Trigger", "The owner opens the dashboard, or the two-second refresh fires."),
-        ("Main flow", "1. The browser sends `GET /status`.\n2. The device serialises eight fields.\n3. The page updates "
+        ("Main flow", "1. The browser sends `GET /status`.\n2. The device serialises the status object.\n3. The page updates "
                       "five display rows and the link footer."),
         ("Alternate flow", "A1. The request fails: the footer reports a lost connection and the previous "
                            "values stay on screen."),
@@ -289,22 +246,8 @@ def write_body(doc, counter):
         ("Frequency", "At most once per 30 minutes."),
     ])
 
-    h3(doc, "2.3.5", "UC-05: Dispense a Measured Portion (deferred)")
-    use_case(doc, counter, "UC-05", "Dispense a measured portion", [
-        ("Actor", "System"),
-        ("Goal", "Deliver a mass of food within tolerance of the target."),
-        ("Precondition", "The load cell is calibrated at zero with an empty bowl."),
-        ("Trigger", "Any feeding path starts."),
-        ("Main flow", "1. The flap opens.\n2. The amplifier is sampled ten times per second.\n3. The mass delta is "
-                      "compared with the target.\n4. The flap closes when the target is reached."),
-        ("Alternate flow", "A1. The timeout of 3 s expires: the flap closes and the meal is recorded with a "
-                           "shortfall flag."),
-        ("Postcondition", "The dispensed mass and the shortfall are recorded."),
-        ("Frequency", "Once per meal."),
-    ])
-
-    h3(doc, "2.3.6", "UC-06: Recover From a Network Loss")
-    use_case(doc, counter, "UC-06", "Recover from a network loss", [
+    h3(doc, "2.3.5", "UC-05: Recover From a Network Loss")
+    use_case(doc, counter, "UC-05", "Recover from a network loss", [
         ("Actor", "System"),
         ("Goal", "Return to the network without a reboot."),
         ("Precondition", "The device was connected and lost the link."),
@@ -335,15 +278,15 @@ def write_body(doc, counter):
         ["FR-05", "The device shall close the flap within 1000 ms of opening it, on every code path.",
          "Must", "T", "Delivered"],
         ["FR-06", "The device shall reject any method other than `POST` on `/feed`.", "Must", "T", "Delivered"],
-        ["FR-07", "The device shall return the eight status fields defined in the status table above on "
+        ["FR-07", f"The device shall return the status fields defined in Section {sec('2.6.2')} on "
                   "`GET /status`.",
          "Must", "T", "Delivered"],
         ["FR-08", "The dashboard shall refresh its values every 2 seconds without user action.",
          "Must", "D", "Delivered"],
         ["FR-09", "The device shall reset the daily meal count when the local date changes.", "Must", "T",
          "Delivered"],
-        ["FR-10", "The device shall record the trigger source of every meal as manual, schedule, or presence.",
-         "Must", "T", "Delivered"],
+        ["FR-10", "The device shall record the trigger source of every meal.", "Must", "T",
+         "Delivered"],
         ["FR-11", "The device shall serve the dashboard page on `GET /` with no external asset.",
          "Must", "T", "Delivered"],
         ["FR-12", "The device shall return 404 for every undefined path.", "Must", "T", "Delivered"],
@@ -357,7 +300,9 @@ def write_body(doc, counter):
          "Parts received"],
         ["FR-17", "The device shall persist the daily history across a reboot.", "Could", "T", "Future work"],
         ["FR-18", "The device shall refuse a meal when the configured daily cap is reached.", "Should", "T",
-         "Future work"],
+         "Parts received"],
+        ["FR-19", "The device shall accept three meal times on `POST /schedule`, reject a malformed value, "
+                  "and retain the accepted table across a reboot.", "Must", "T", "Delivered"],
     ], widths=[1.4, 7.9, 2.1, 2.5, 2.7], size=8.8)
 
     h2(doc, "2.6", "External Interface Requirements")
@@ -376,7 +321,8 @@ def write_body(doc, counter):
     table(doc, counter, "HTTP interface", ["Method", "Path", "Request body", "Response"], [
         ["GET", "/", "None", "HTML, 200"],
         ["GET", "/status", "None", "JSON, 200, `application/json; charset=utf-8`"],
-        ["POST", "/feed", "None", "JSON `{\"ok\":true}`, 200"],
+        ["POST", "/feed", "None", "Status JSON, 200"],
+        ["POST", "/schedule", "`t=HH:MM,HH:MM,HH:MM`", "Status JSON, 200; `{\"ok\":false}`, 400 if malformed"],
         ["Any", "Other", "None", "Text, 404"],
     ], widths=[2.4, 3.2, 3.4, 7.5])
 
@@ -384,11 +330,16 @@ def write_body(doc, counter):
         ["open", "Boolean", "true, false", "Flap is open."],
         ["count", "Integer", "0 to 255", "Meals counted since local midnight."],
         ["last", "String", "HH:MM or -", "Local time of the last meal."],
-        ["source", "String", "manual, schedule, presence, empty", "Trigger of the last meal."],
+        ["source", "String", "label or empty", "Trigger of the last meal."],
         ["time", "String", "HH:MM:SS or --:--:--", "Device local time."],
         ["schedule", "String", "Three times", "Configured meal times."],
         ["ip", "String", "Dotted quad", "Device address."],
         ["rssi", "Integer", "-90 to -30", "Signal strength in dBm."],
+        ["level", "Integer", "-1 to 100", "Hopper fill percentage. -1 before the first sample."],
+        ["near", "Number", "cm, -1 unknown", "Last presence distance."],
+        ["cat", "Boolean", "true, false", "A cat is inside the presence range now."],
+        ["cap", "Integer", "0 to 6", "Presence-triggered meals used today."],
+        ["hist", "Array", "Up to 5 entries", "Recent meals, each with time and source."],
     ], widths=[2.6, 2.4, 5.4, 6.1])
 
     h3(doc, "2.6.3", "Hardware Interface")
@@ -399,15 +350,15 @@ def write_body(doc, counter):
         ["HC-SR04 presence", "Echo", "D7, GPIO13", "5 V output. Divided to 3.00 V with 2.2k and 3.3k.", "Wired"],
         ["HC-SR04 level", "Trig", "D1, GPIO5", "Aimed down into the hopper.", "Wired"],
         ["HC-SR04 level", "Echo", "D2, GPIO4", "Divided with a second 2.2k and 3.3k pair.", "Wired"],
-        ["Status LED", "Digital out", "D4, GPIO2", "Bring-up only. Active low on this board.", "Test"],
     ], widths=[2.6, 2.0, 2.9, 6.4, 2.6], size=9)
 
     h2(doc, "2.7", "Data Requirements")
-    para(doc, "The device keeps one record in RAM. There is no database, no file system, and no remote store in "
-              "the delivered baseline.")
+    para(doc, "The device keeps one state record in RAM and one schedule table in EEPROM. There is no "
+              "database, no file system, and no remote store in the delivered baseline.")
     table(doc, counter, "Persistent and in-memory data", ["Name", "Type", "Lifetime", "Purpose"], [
         ["Feeder state", "Struct of six fields", "Until reboot", "Flap state, count, last meal, source, day."],
-        ["Meal table", "Constant array of three hours", "Firmware constant", "Schedule definition."],
+        ["Meal table", "Three hour and minute pairs", "EEPROM, survives reboot", "Schedule definition."],
+        ["Meal history", "Ring buffer of five entries", "Until reboot", "Recent meals for the dashboard."],
         ["Minute key", "Integer", "Until reboot", "Duplicate suppression for the scheduler."],
         ["Last connection attempt", "Unsigned long", "Until reboot", "Rate limit for Wi-Fi retries."],
     ], widths=[4.2, 4.0, 3.6, 4.7])
@@ -434,7 +385,7 @@ def write_body(doc, counter):
         ["NFR-CP-01", "Constraint", "The device runs from a 5 V 2 A powerbank with no host computer.", "T"],
         ["NFR-CP-02", "Constraint", "The device operates on 2.4 GHz Wi-Fi only.", "I"],
         ["NFR-CP-03", "Constraint", "The firmware fits in the 4 MB flash of the NodeMCU v3.", "I"],
-    ], widths=[2.6, 2.8, 9.2, 1.9], size=9)
+    ], widths=[2.6, 2.8, 8.7, 2.4], size=9)
 
     h2(doc, "2.9", "Design Constraints")
     bullets(doc, [
@@ -457,30 +408,9 @@ def write_body(doc, counter):
         ["FR-13, FR-14", "Field test with the cat", "16 of 20 detections correct. No second meal inside 30 minutes."],
         ["FR-16", "Level comparison", "Reported percentage within 10 points of the measured fill at three known levels."],
         ["FR-17", "Power cycle", "History survives a reboot. Currently fails by design."],
+        ["FR-19", "Schedule edit", "Valid table is served back and survives a reboot. A malformed table returns 400."],
         ["NFR-PM-01", "Stopwatch", "Median response under 2 s across 20 requests."],
         ["NFR-RL-02", "Router power cycle", "The device rejoins with no manual action."],
         ["NFR-SEC-01", "Repository inspection", "`secrets.h` is absent from the tree and from history."],
     ], widths=[3.6, 4.2, 8.7])
-
-    # ---------------------------------------------------------------- appendix
-    h1(doc, "A", "Rubric Coverage")
-    para(doc, "The assessment rubric weights Idea 50, Circuit 30, and Doc 20. The table maps each criterion to "
-              "the section that satisfies it.")
-    table(doc, counter, "Rubric coverage", ["Criterion", "Weight", "Where it is answered"], [
-        ["Concept and problem fit", "Idea", "Proposal, motivation and purpose"],
-        ["Innovation and impact", "Idea", "Proposal, strengths and opportunities; feature F5"],
-        ["UX and use-case clarity", "Idea", "Proposal, target users; use case descriptions; dashboard layout"],
-        ["Architecture concept and feasibility", "Idea", "Proposal, technology review; design document, "
-                                                       "architecture chapter"],
-        ["Hardware implementation", "Circuit", "Hardware interface table; design document, power design"],
-        ["Software and firmware", "Circuit", "Functional requirements; design document, component description"],
-        ["System integration and IoT connectivity", "Circuit", "HTTP interface; design document, interface "
-                                                              "design"],
-        ["SRS", "Doc", "This document"],
-        ["Proposal and abstract", "Doc", "Proposal, introduction"],
-        ["SDD", "Doc", "Design document, architecture and detailed design"],
-        ["Output and discussion", "Doc", "To be written after testing on 3 November"],
-        ["Photos and evidence", "Doc", "Test record and photographs of the assembled device"],
-        ["Conclusion and future work", "Doc", "Proposal, future work; conclusion to be written"],
-    ], widths=[6.4, 2.4, 7.7])
 

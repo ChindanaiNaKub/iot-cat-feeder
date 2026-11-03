@@ -76,7 +76,7 @@ def components():
     g.edge("http", "state", label="read", style="dashed", **EDGE)
     g.edge("sched", "feed", label="hour match", **EDGE)
     g.edge("sensor", "feed", label="cat near", **EDGE)
-    g.edge("feed", "servo", label="write(180)", **EDGE)
+    g.edge("feed", "servo", label="write(135)", **EDGE)
     g.edge("feed", "state", label="markFeed", **EDGE)
     g.edge("state", "http", label="statusJson", style="dashed", **EDGE)
     g.edge("ntp", "sched", label="time_t", style="dashed", **EDGE)
@@ -91,7 +91,7 @@ def state():
     g.attr(rankdir="LR", nodesep="0.5", ranksep="1.0")
     g.node("start", "", shape="circle", width="0.18", style="filled", fillcolor="#404040")
     g.node("idle", "IDLE\nflap shut, servo at 0 deg", **ACCENT)
-    g.node("open", "FEEDING\nflap open, servo at 180 deg", **ACCENT)
+    g.node("open", "FEEDING\nflap open, servo at 135 deg", **ACCENT)
     g.node("cooldown", "COOLDOWN\nno feed for 30 min (planned)", **PLANNED)
 
     g.edge("start", "idle", **EDGE)
@@ -113,7 +113,7 @@ def activity():
     g.node("decide", "route", shape="diamond", style="filled", fillcolor="#FFF2CC", color="#BF9000",
            fontname=FONT, fontsize="9.5")
     g.node("mark", "markFeed(source)\ncount, time, source", **BOX)
-    g.node("servo", "servo.write(180)", **BOX)
+    g.node("servo", "servo.write(135)", **BOX)
     g.node("guard", "open for 900 ms?", shape="diamond", style="filled", fillcolor="#FFF2CC",
            color="#BF9000", fontname=FONT, fontsize="9.5")
     g.node("close", "closeFlap()\nservo.write(0)", **BOX)
@@ -139,14 +139,9 @@ def activity():
     return render(g, "activity")
 
 
-if __name__ == "__main__":
-    for builder in (context, components, state, activity):
-        print(builder())
-
-
 def usecase():
     g = Digraph("usecase")
-    g.attr(rankdir="LR", nodesep="0.30", ranksep="0.9")
+    g.attr(rankdir="LR", nodesep="0.12", ranksep="0.6")
     uc = dict(shape="ellipse", style="filled", fillcolor="#FFFFFF", color="#4F81BD", fontname=FONT,
               fontsize="9.5", penwidth="1.2", margin="0.10,0.05")
     ucp = dict(shape="ellipse", style="dashed,filled", fillcolor="#FFFFFF", color="#A6A6A6",
@@ -158,16 +153,23 @@ def usecase():
            fontname=FONT, fontsize="10")
     g.node("clock", "System clock\n(NTP)", shape="box", style="filled", fillcolor="#F2F2F2",
            color="#808080", fontname=FONT, fontsize="10")
+    g.node("sys", "System", shape="box", style="filled", fillcolor="#F2F2F2", color="#808080",
+           fontname=FONT, fontsize="10")
 
     g.node("uc1", "UC-01\nFeed on demand", **uc)
     g.node("uc2", "UC-02\nReceive scheduled feeding", **uc)
     g.node("uc3", "UC-03\nView status and history", **uc)
     g.node("uc4", "UC-04\nFeed when cat approaches", **ucp)
-    g.node("uc5", "UC-05\nDispense measured portion", **ucp)
+    g.node("uc5", "UC-05\nRecover from network loss", **uc)
 
     g.edge("owner", "uc1", **EDGE)
     g.edge("owner", "uc3", **EDGE)
     g.edge("clock", "uc2", **EDGE)
     g.edge("cat", "uc4", style="dashed", **EDGE)
-    g.edge("uc4", "uc5", label="includes", style="dashed", **EDGE)
+    g.edge("sys", "uc5", **EDGE)
     return render(g, "usecase")
+
+
+if __name__ == "__main__":
+    for builder in (context, components, state, activity, usecase):
+        print(builder())

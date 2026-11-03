@@ -25,6 +25,9 @@ HEADINGS = []
 CHAPTER_SHIFT = 0
 APPENDIX_LETTER = "A"
 
+# A part opener already forced a page break, so the chapter that follows it must not.
+_NO_BREAK_NEXT = False
+
 
 def sec(number):
     """Shift a section number like "2.10" by the current chapter shift."""
@@ -147,7 +150,7 @@ def table_of_contents(doc, heading="Table of Contents", entries=None):
     if entries:
         for level, text, page in entries:
             line = doc.add_paragraph()
-            line.paragraph_format.space_after = Pt(3)
+            line.paragraph_format.space_after = Pt(2)
             line.paragraph_format.left_indent = Cm(0.6 * (level - 1))
             line.paragraph_format.tab_stops.add_tab_stop(
                 Cm(16.6), WD_TAB_ALIGNMENT.RIGHT, WD_TAB_LEADER.DOTS)
@@ -179,12 +182,17 @@ def table_of_contents(doc, heading="Table of Contents", entries=None):
 
 
 def h1(doc, number, title):
+    global _NO_BREAK_NEXT
     if isinstance(number, str) and number.isalpha():
         text = f"Appendix {APPENDIX_LETTER}  {title}"
     else:
         text = f"Chapter {int(number) + CHAPTER_SHIFT}  {title}"
     HEADINGS.append((1, text))
-    return doc.add_heading(text, level=1)
+    heading = doc.add_heading(text, level=1)
+    if _NO_BREAK_NEXT:
+        heading.paragraph_format.page_break_before = False
+        _NO_BREAK_NEXT = False
+    return heading
 
 
 def h2(doc, number, title):
@@ -199,9 +207,11 @@ def h3(doc, number, title):
 
 
 def part(doc, label, title, blurb=""):
+    global _NO_BREAK_NEXT
     text = f"{label}  {title}"
     HEADINGS.append((1, text))
     par = doc.add_heading(text, level=1)
+    _NO_BREAK_NEXT = True
     if blurb:
         note = doc.add_paragraph()
         note.paragraph_format.space_before = Pt(10)

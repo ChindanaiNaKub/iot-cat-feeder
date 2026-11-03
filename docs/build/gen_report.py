@@ -17,15 +17,15 @@ from docx_common import HEADINGS, Numbering, cover, new_document, part, save, ta
 
 PARTS = [
     (gen_proposal, "Part I", "Project Proposal",
-     "Problem, objectives, scope, review, and quality planning.", 0, "A"),
+     "Problem, objectives, scope, and the review that supports them.", 0, "A"),
     (gen_srs, "Part II", "Software Requirements Specification",
-     "Functions, use cases, interfaces, and verifiable requirements.", 5, "A"),
+     "Functions, use cases, interfaces, and verifiable requirements.", 2, "A"),
     (gen_sdd, "Part III", "Software Design Description",
-     "Architecture, detailed design, traceability, and the test plan.", 7, "B"),
+     "Architecture, detailed design, traceability, and the test plan.", 4, "B"),
     (gen_output, "Part IV", "Output and Discussion",
-     "The delivered system, the measured results, and what they mean.", 11, "C"),
+     "The delivered system, the measured results, and what they mean.", 8, "C"),
     (gen_conclusion, "Part V", "Conclusion and Future Work",
-     "What was achieved, what was learned, and what comes next.", 14, "D"),
+     "What was achieved, what was learned, and what comes next.", 11, "D"),
 ]
 
 
