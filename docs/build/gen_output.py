@@ -104,7 +104,7 @@ def write_body(doc, counter):
         ["Level with an empty hopper (TC-10)", "Same fault as the row above."],
     ], widths=[6.0, 11.5])
 
-    h2(doc, "2.4", "Evidence collected")
+    h2(doc, "2.4", "Photos and Evidence")
     para(doc, "The photographs below record the device as built and running on the powerbank, with no host "
               "computer attached.")
     figure(doc, counter, str(EVIDENCE / "04.jpg"),
