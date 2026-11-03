@@ -168,7 +168,10 @@ def write_body(doc, counter):
     para(doc, "The cost of the decision is stated plainly. Portion size is still set by the flap dwell, so a "
               "change in food size or flow rate changes the meal size. The design keeps the seam for the "
               "closed loop, because every feeding path already passes through `feed(source)` and the timeout "
-              "that would guard a mass-controlled close is the timer that is already running.")
+              "that would guard a mass-controlled close is the timer that is already running. No mass figure is "
+              "claimed for one cycle, because none was weighed. Three meals on a kitchen scale would settle it, "
+              "and that is the first measurement this section would need before the portion could be called "
+              "controlled.")
 
     h2(doc, "3.6", "Defects found and fixed")
     bullets(doc, [
@@ -191,10 +194,12 @@ def write_body(doc, counter):
     h2(doc, "3.7", "Limitations and threats to validity")
     bullets(doc, [
         "The history lives in RAM. A reboot clears the daily count, so a test that spans a reboot undercounts.",
+        "The mass dispensed per cycle was never weighed, so the report states the dwell that sets the portion, "
+        "not the portion itself.",
         "The schedule test measures one device in one room. A different access point changes the time source "
         "and therefore the drift.",
-        "The presence test is performed by a person walking past the sensor, not by the cat. A cat moves lower "
-        "and more obliquely, so the measured accuracy is an upper bound.",
+        "Presence accuracy is not measured. The only reading taken was 9 cm during setup, which is short of "
+        "the 60 cm the requirement names and is not a detection trial.",
         "The level sensor is mounted where its beam misses the hopper, so the level test was not run and no "
         "percentage is reported. The mount is the only thing between the design and a working gauge.",
         "There is no authentication. Any client on the same network can dispense a meal.",
