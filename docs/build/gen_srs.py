@@ -69,8 +69,8 @@ def write_body(doc, counter):
         ["F1", "Scheduled feeding", "Dispenses one meal at each configured time, using network time.", "Delivered"],
         ["F2", "On-demand feeding", "Dispenses one meal when the owner presses the dashboard button.", "Delivered"],
         ["F3", "Status and history", "Reports flap state, daily count, last meal, and link quality.", "Delivered"],
-        ["F4", "Presence-triggered feeding", "Dispenses a meal when a cat is detected near the bowl.", "Parts received"],
-        ["F5", "Hopper level monitoring", "Reports the remaining food as a percentage of hopper depth.", "Parts received"],
+        ["F4", "Presence-triggered feeding", "Dispenses a meal when a cat is detected near the bowl.", "Integrated"],
+        ["F5", "Hopper level monitoring", "Reports the remaining food as a percentage of hopper depth.", "Not delivered"],
     ], widths=[1.2, 4.2, 8.1, 3.0])
 
     h2(doc, "1.5", "User Characteristics")
@@ -114,8 +114,10 @@ def write_body(doc, counter):
         ["Schedule minute", "A minute of local time that appears in the configured meal table."],
         ["Source", "The trigger of a meal: the web button, the schedule, or the presence sensor."],
         ["Minute key", "An integer that identifies one calendar minute, used to prevent duplicate meals."],
-        ["Parts received", "The hardware for this requirement is on the bench and wired. The firmware "
-                           "integration and the acceptance test are still outstanding."],
+        ["Integrated", "Wired and driven by the firmware as a target feature. No acceptance test has been "
+                       "run, so the requirement is not claimed as delivered."],
+        ["Not delivered", "The function exists in the firmware but the hardware does not produce a usable "
+                          "signal. The reason is stated where the requirement is described."],
     ], widths=[3.6, 12.9])
 
     h2(doc, "1.9", "References")
@@ -291,16 +293,16 @@ def write_body(doc, counter):
          "Must", "T", "Delivered"],
         ["FR-12", "The device shall return 404 for every undefined path.", "Must", "T", "Delivered"],
         ["FR-13", "The device shall detect a cat within 60 cm of the bowl after three consecutive readings.",
-         "Should", "T", "Parts received"],
+         "Should", "T", "Integrated"],
         ["FR-14", "The device shall not dispense more than one presence-triggered meal in 30 minutes.",
-         "Should", "T", "Parts received"],
+         "Should", "T", "Integrated"],
         ["FR-15", "The device shall dispense a mass within 15 percent of the configured target.",
          "Could", "T", "Future work"],
         ["FR-16", "The device shall report hopper level as a percentage of usable depth.", "Could", "D",
-         "Parts received"],
+         "Not delivered"],
         ["FR-17", "The device shall persist the daily history across a reboot.", "Could", "T", "Future work"],
         ["FR-18", "The device shall refuse a meal when the configured daily cap is reached.", "Should", "T",
-         "Parts received"],
+         "Integrated"],
         ["FR-19", "The device shall accept three meal times on `POST /schedule`, reject a malformed value, "
                   "and retain the accepted table across a reboot.", "Must", "T", "Delivered"],
     ], widths=[1.4, 7.9, 2.1, 2.5, 2.7], size=8.8)

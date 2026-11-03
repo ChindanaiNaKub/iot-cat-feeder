@@ -5,7 +5,11 @@ measured column is left blank until the test record exists: no value is written
 here that was not observed on the hardware.
 """
 
-from docx_common import h1, h2, para, bullets, numbered, table
+import pathlib
+
+from docx_common import figure, h1, h2, para, bullets, numbered, table
+
+EVIDENCE = pathlib.Path(__file__).parent.parent / "evidence"
 
 
 def write_body(doc, counter):
@@ -42,7 +46,7 @@ def write_body(doc, counter):
         "Presence needs three consecutive readings inside the range before a meal is dispensed. A cooldown and "
         "a daily cap bound how often the cat can trigger a meal.",
         "Hopper level is the median of the last five samples, mapped between an empty and a full "
-        "depth captured on the dashboard.",
+        "depth captured on the dashboard. The sensor mount defeats it, as Section 11.4 explains.",
         "The dashboard is one response compiled into the binary. It refreshes every two seconds and has no "
         "external asset, so it works with no internet connection.",
     ])
@@ -66,37 +70,55 @@ def write_body(doc, counter):
     h1(doc, 2, "Test Results")
 
     h2(doc, "2.1", "Procedure")
-    para(doc, "Every test ran on the assembled device with the powerbank as the only supply. The schedule test "
-              "ran across a full 24 hours with the device undisturbed, and the meal times were read back from "
-              "the dashboard history afterwards. The mechanical tests were run by hand, with the flap visible, "
-              "and every close was watched rather than inferred from the log. The presence test walked past the "
-              "sensor twenty times at a measured distance.")
+    para(doc, "Every test ran on the assembled device with the powerbank as the only supply. The feeding button "
+              "was pressed ten times with five seconds between presses, and every open and every close was "
+              "watched at the flap rather than inferred from the log. The schedule was tested by setting the "
+              "next meal one minute ahead, leaving the device undisturbed, and watching the flap at the "
+              "appointed minute. The presence and level tests were not run. Section 10.3 states the reason for "
+              "each.")
     para(doc, "The design document defines the test cases and the pass condition for each. This chapter "
               "records the measured value for those cases.")
 
     h2(doc, "2.2", "Measured results")
-    para(doc, "A dash means the test had not been run when this volume was assembled. The pass condition for "
-              "each row is stated in the test plan of Part III.")
+    para(doc, "The pass condition for each row is stated in the test plan of Part III.")
     table(doc, counter, "Measured results", ["Criterion", "Test", "Measured", "Unit"], [
-        ["Manual presses completed", "TC-03", "-", "presses"],
-        ["Flap open latency, mean", "TC-02", "-", "s"],
-        ["Automatic closes", "TC-03", "-", "of 50"],
-        ["Closes that exceeded 3 s", "TC-03", "-", "count"],
-        ["Open angle reached", "Servo test", "-", "degrees"],
-        ["Scheduled meals in 24 hours", "TC-04", "-", "meals"],
-        ["Schedule drift", "TC-04", "-", "minutes"],
-        ["Presence decisions correct", "TC-09", "-", "of 20"],
-        ["Detection range", "TC-09", "-", "cm"],
-        ["Level with a full hopper", "TC-10", "-", "percent"],
-        ["Level with an empty hopper", "TC-10", "-", "percent"],
-        ["Reboots during the test", "All", "-", "count"],
+        ["Manual presses completed", "TC-03", "10", "presses"],
+        ["Automatic closes", "TC-03", "10", "of 10"],
+        ["Closes that exceeded 3 s", "TC-03", "0", "count"],
+        ["Scheduled meals fired", "TC-04", "3", "of 3"],
+        ["Schedule drift", "TC-04", "0", "minutes"],
+        ["Open angle commanded", "Servo test", "135", "degrees"],
+        ["Reboots during the tests", "All", "0", "count"],
     ], widths=[5.6, 2.6, 4.2, 4.1])
 
-    h2(doc, "2.3", "Evidence collected")
-    para(doc, "The photographs in the evidence folder record the device as built: the enclosure with the bowl, "
-              "the wiring on the breadboard, the cardboard bracket that carries a sensor, and a meal in the "
-              "bowl after a feed. The dashboard is captured from a desktop browser. The folder has its own "
-              "README that lists each shot against the rubric.")
+    h2(doc, "2.3", "Tests not run")
+    table(doc, counter, "Tests not run and the reason", ["Criterion", "Reason"], [
+        ["Flap open latency, mean (TC-02)",
+         "The open was observed on every press but not timed with a stopwatch, so no figure is claimed."],
+        ["Presence decisions correct (TC-09)",
+         "No acceptance walk was run. The dashboard received a 9 cm reading during setup, which shows the "
+         "sensor path is live but does not measure detection accuracy."],
+        ["Level with a full hopper (TC-10)",
+         "The beam lands on the box floor instead of the grain, so the reading does not follow the fill. "
+         "Section 11.4 describes the fault."],
+        ["Level with an empty hopper (TC-10)", "Same fault as the row above."],
+    ], widths=[6.0, 11.5])
+
+    h2(doc, "2.4", "Evidence collected")
+    para(doc, "The photographs below record the device as built and running on the powerbank, with no host "
+              "computer attached.")
+    figure(doc, counter, str(EVIDENCE / "04.jpg"),
+           "The assembled feeder: cardboard hopper, flap at the outlet, and dry food in the bowl.",
+           width_cm=8.5)
+    figure(doc, counter, str(EVIDENCE / "01.jpg"),
+           "Inside the enclosure, from above: controller, wiring, servo linkage, and bowl.", width_cm=14.0)
+    figure(doc, counter, str(EVIDENCE / "02.jpg"),
+           "The open enclosure with the power cable leaving the box for the powerbank.", width_cm=8.5)
+    figure(doc, counter, str(EVIDENCE / "03.jpg"),
+           "An ultrasonic sensor on its cardboard bracket above the hopper opening.", width_cm=8.5)
+    figure(doc, counter, str(EVIDENCE / "website-desktop.png"),
+           "The dashboard served by the device: flap state, daily count, hopper level, cat range, "
+           "schedule, and meal log.", width_cm=8.0)
 
     # ---------------------------------------------------------------- chapter 3
     h1(doc, 3, "Discussion")
@@ -106,15 +128,17 @@ def write_body(doc, counter):
               "the device boots at an arbitrary time and immediately believes a meal is due. The minute key "
               "makes the scheduler idempotent inside one minute, so a slow pass through the loop, a clock "
               "resync, or a second evaluation cannot double feed. The residual error is bounded by the network "
-              "time query and by the one minute resolution of the schedule, and the test measures that "
-              "residual rather than assuming it.")
+              "time query and by the one minute resolution of the schedule. In the test the three configured "
+              "times each produced one meal, with no second meal inside the same minute and no measurable "
+              "drift against the minute that was set.")
 
     h2(doc, "3.2", "Flap safety")
     para(doc, "The close condition lives in the main loop and depends only on `millis()`, so it survives a "
               "dropped client, a blocked socket, and a browser that closes the page mid-request. This was a "
               "deliberate inversion of the obvious design, where the request handler opens the flap and then "
               "closes it after a delay. The loop version also keeps the HTTP server responsive during the "
-              "open interval, because nothing blocks.")
+              "open interval, because nothing blocks. Ten consecutive presses five seconds apart produced ten "
+              "closes and no stranded flap, which is the failure this design exists to prevent.")
 
     h2(doc, "3.3", "Presence detection")
     para(doc, "Two filters stand between the sensor and a meal. The median of five samples rejects a single "

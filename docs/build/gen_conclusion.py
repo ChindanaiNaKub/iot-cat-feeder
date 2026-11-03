@@ -27,8 +27,9 @@ def write_body(doc, counter):
          "Delivered. The schedule is gated on a valid clock and suppressed per minute.",
          "Part II, F1; Part III, minute key algorithm; results table"],
         ["A dashboard served in under two seconds",
-         "Delivered. One compiled response, no external asset, two second refresh.",
-         "Part II, NFR-PM-01; results table"],
+         "Delivered. One compiled response, no external asset, two second refresh. The response time was "
+         "not timed with a stopwatch.",
+         "Part II, NFR-PM-01"],
         ["The flap closes on every code path",
          "Delivered. The close runs from the main loop and cannot be stranded by a client.",
          "Part III, manual feeding flow; test TC-03"],
@@ -36,8 +37,9 @@ def write_body(doc, counter):
          "Delivered. Five meals in RAM, with time and trigger source, on the dashboard.",
          "Part II, F3; Part III, data design"],
         ["Presence detection inside 60 cm",
-         "Delivered in firmware, with median filtering and three-reading confirmation. Accuracy is in the "
-         "results table.", "Part II, F4; test TC-09"],
+         "Integrated. The firmware applies the median filter, the three-reading confirmation, a cooldown, and "
+         "a daily cap. No acceptance test with the cat was run, so no accuracy figure is claimed.",
+         "Part II, F4; Part III, Section 7.2.2"],
         ["Rebuildable from the repository",
          "Delivered. Wiring page, pin map, bring-up sketches, and this volume.",
          "Repository; Part III, detailed design"],
@@ -58,9 +60,8 @@ def write_body(doc, counter):
         "Meal size is open loop and follows the flap dwell, not the mass dispensed.",
         "The meal count increments before the servo moves, so a failed servo still counts a meal.",
         "The hopper level is not delivered. The level sensor was glued down before its aim was checked, so the "
-        "beam reads the box floor and the percentage does not change with the food. The mount has to be moved "
-        "and the depth captured again before the reading means anything, and until then the dashboard reports "
-        "no level.",
+        "beam reads the box floor and the dashboard reports a fixed percentage that does not follow the food. "
+        "The mount has to be moved and the depth captured again before the reading means anything.",
         "There is no authentication, so the device is safe only on a trusted network.",
         "The enclosure is cardboard, the servo linkage is taped, and one hopper serves one cat.",
     ])

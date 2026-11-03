@@ -58,7 +58,7 @@ def write_body(doc, counter):
         ["State layer", "The `struct Feeder` instance and the functions that read or write it."],
         ["Minute key", "Integer `(day * 100 + hour) * 100 + minute`, used to detect a new minute."],
         ["Flap cycle", "One open command followed by the automatic close."],
-        ["Parts received", "Hardware on the bench and wired. Firmware integration and acceptance test outstanding."],
+        ["Integrated", "Wired and driven by the firmware as a target feature, with no acceptance test run yet."],
     ], widths=[3.4, 13.1])
 
     # ---------------------------------------------------------------- chapter 2
@@ -68,7 +68,7 @@ def write_body(doc, counter):
     para(doc, "The system has three layers. The network layer terminates HTTP and converts requests into "
               "commands. The control layer decides whether a meal should happen. The device layer drives the "
               "servo and reports electrical state. The layers are functions in one file rather than modules in "
-              "separate files, because the whole program is under 900 lines and a file split would add build "
+              "separate files, because the whole program is about 1,000 lines and a file split would add build "
               "complexity without adding clarity.")
     table(doc, counter, "Layer responsibilities", ["Layer", "Components", "Responsibility"], [
         ["Network", "`keepWifi`, `server`, request handlers",
@@ -98,7 +98,7 @@ def write_body(doc, counter):
         ["`checkSchedule`", "Function", "`time`, `Feeder`, `feed`", "Delivered"],
         ["`clockText`, `scheduleText`", "Functions", "`time`, constant table", "Delivered"],
         ["`keepWifi`", "Function", "`WiFi`, `millis`", "Delivered"],
-        ["Presence detector", "Function", "Ultrasonic driver, `feed`", "Parts received"],
+        ["Presence detector", "Function", "Ultrasonic driver, `feed`", "Integrated"],
     ], widths=[4.0, 4.6, 5.0, 2.9], size=9)
 
     h2(doc, "2.4", "Deployment and Power Design")
@@ -120,7 +120,7 @@ def write_body(doc, counter):
     h2(doc, "2.5", "Design Rationale")
     table(doc, counter, "Design decisions and alternatives", ["Decision", "Alternative", "Why the alternative lost"], [
         ["Single file, functions only", "Split modules with headers",
-         "Under 900 lines. A split adds include order problems for no gain."],
+         "About 1,000 lines. A split adds include order problems for no gain."],
         ["Cooperative loop, no delay", "`delay(900)` after opening the flap",
          "`delay` blocks the HTTP server. The page would freeze on every meal."],
         ["Close driven by `millis()` in the loop", "Close driven by the HTTP handler",
