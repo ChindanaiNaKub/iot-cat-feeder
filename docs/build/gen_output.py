@@ -74,8 +74,9 @@ def write_body(doc, counter):
               "was pressed ten times with five seconds between presses, and every open and every close was "
               "watched at the flap rather than inferred from the log. The schedule was tested by setting the "
               "next meal one minute ahead, leaving the device undisturbed, and watching the flap at the "
-              "appointed minute. The presence and level tests were not run. Section 10.3 states the reason for "
-              "each.")
+              "appointed minute. The portion trial dispensed three meals at the configured dwell, thirty "
+              "seconds apart, and counted the pieces that fell into the bowl. The presence and level tests "
+              "were not run. Section 10.3 states the reason for each.")
     para(doc, "The design document defines the test cases and the pass condition for each. This chapter "
               "records the measured value for those cases.")
 
@@ -88,6 +89,8 @@ def write_body(doc, counter):
         ["Scheduled meals fired", "TC-04", "3", "of 3"],
         ["Schedule drift", "TC-04", "0", "minutes"],
         ["Open angle commanded", "Servo test", "135", "degrees"],
+        ["Pieces per meal, mean", "Portion trial", "24.3", "pieces"],
+        ["Pieces per meal, range", "Portion trial", "18 to 30", "pieces"],
         ["Reboots during the tests", "All", "0", "count"],
     ], widths=[5.6, 2.6, 4.2, 4.1])
 
@@ -168,10 +171,14 @@ def write_body(doc, counter):
     para(doc, "The cost of the decision is stated plainly. Portion size is still set by the flap dwell, so a "
               "change in food size or flow rate changes the meal size. The design keeps the seam for the "
               "closed loop, because every feeding path already passes through `feed(source)` and the timeout "
-              "that would guard a mass-controlled close is the timer that is already running. No mass figure is "
-              "claimed for one cycle, because none was weighed. Three meals on a kitchen scale would settle it, "
-              "and that is the first measurement this section would need before the portion could be called "
-              "controlled.")
+              "that would guard a mass-controlled close is the timer that is already running.")
+    para(doc, "Three consecutive cycles at the same dwell produced 18, 25, and 30 pieces, a mean of 24.3 and "
+              "a spread of about 25 percent either side of it. That is wider than the 15 percent tolerance the "
+              "requirement names, so the open loop does not hold a portion. Two candidates explain a spread of "
+              "this size, bridging in the hopper and the head of food pressing on the flap, and the firmware "
+              "measures neither, so the report does not attribute the spread to one of them. The result is the "
+              "argument for closing the loop rather than tuning the dwell. No single dwell compensates for a "
+              "variable the controller cannot see.")
 
     h2(doc, "3.6", "Defects found and fixed")
     bullets(doc, [
@@ -194,8 +201,10 @@ def write_body(doc, counter):
     h2(doc, "3.7", "Limitations and threats to validity")
     bullets(doc, [
         "The history lives in RAM. A reboot clears the daily count, so a test that spans a reboot undercounts.",
-        "The mass dispensed per cycle was never weighed, so the report states the dwell that sets the portion, "
-        "not the portion itself.",
+        "The portion is reported as a count of pieces, not a mass, because no scale was available. The count "
+        "measures consistency but cannot be converted to grams without knowing the mean piece weight.",
+        "The portion trial is three cycles from one hopper fill, so the spread is indicative rather than a "
+        "distribution.",
         "The schedule test measures one device in one room. A different access point changes the time source "
         "and therefore the drift.",
         "Presence accuracy is not measured. The only reading taken was 9 cm during setup, which is short of "
