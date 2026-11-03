@@ -93,10 +93,10 @@ def write_body(doc, counter):
     ], widths=[5.6, 2.6, 4.2, 4.1])
 
     h2(doc, "2.3", "Evidence collected")
-    para(doc, "The photographs in the evidence folder cover the assembled device, the wiring, the servo "
-              "linkage, the capacitor at the servo connector, the powerbank without a notebook attached, the "
-              "level sensor mount, the dashboard on a phone, and the flap with food falling into the bowl. "
-              "The serial console is captured in one frame to show the address and the periodic status line.")
+    para(doc, "The photographs in the evidence folder record the device as built: the enclosure with the bowl, "
+              "the wiring on the breadboard, the cardboard bracket that carries a sensor, and a meal in the "
+              "bowl after a feed. The dashboard is captured from a desktop browser. The folder has its own "
+              "README that lists each shot against the rubric.")
 
     # ---------------------------------------------------------------- chapter 3
     h1(doc, 3, "Discussion")
