@@ -16,6 +16,7 @@
 
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <EEPROM.h>
 #include <Servo.h>
 #include <time.h>
 
@@ -35,20 +36,38 @@ const int LEVEL_ECHO = D2;
 
 // ---------------------------------------------------------------- ค่าปรับแต่ง
 const int CLOSED_DEG = 0;
-const int OPEN_DEG = 90;             // ค่าชั่วคราว ให้รัน servo_test หามุมจริงก่อน แล้วใส่ค่าที่ได้ลบ 5
+const int OPEN_DEG = 135;             // ค่าชั่วคราว ให้รัน servo_test หามุมจริงก่อน แล้วใส่ค่าที่ได้ลบ 5
 const unsigned long OPEN_MS = 900;
 
+// ตารางมื้อแก้ได้จากหน้าเว็บ เก็บลง EEPROM จึงอยู่ต่อหลังรีสตาร์ต
 const int SCHEDULE_COUNT = 3;
-const int SCHEDULE_HOUR[SCHEDULE_COUNT] = {8, 13, 18};
-const int SCHEDULE_MINUTE = 0;
+struct FeedTime { uint8_t hour; uint8_t minute; };
+const FeedTime DEFAULT_SCHEDULE[SCHEDULE_COUNT] = {{8, 0}, {13, 0}, {18, 0}};
+FeedTime schedule[SCHEDULE_COUNT];
+
+const int EEPROM_BYTES = 16;
+const uint8_t EEPROM_MAGIC = 0xC7;
+
 const long TZ_OFFSET = 7 * 3600;     // ไทย UTC+7
 
 const float NEAR_CM = 60.0;          // ระยะที่ถือว่าแมวเข้ามาใกล้
-const float LEVEL_EMPTY_CM = 18.0;   // ระยะจากเซ็นเซอร์ถึงก้นถังตอนถังว่าง ต้องวัดเอง
-const float LEVEL_FULL_CM = 4.0;     // ระยะตอนอาหารเต็มถัง ต้องวัดเอง
+// สองค่านี้เป็นแค่ค่าตั้งต้น กด "ปรับเทียบ" บนหน้าเว็บตอนถังว่างและตอนถังเต็มแล้วมันจะทับและจำลง EEPROM
+const float LEVEL_EMPTY_CM = 18.0;
+const float LEVEL_FULL_CM = 4.0;
+float levelEmptyCm = LEVEL_EMPTY_CM;
+float levelFullCm = LEVEL_FULL_CM;
+
+const unsigned long LEVEL_STALE_MS = 5000;  // ไม่มีเงาสะท้อนเกินนี้ = อ่านไม่ได้ ห้ามค้างค่าเก่าไว้
+const uint8_t CAL_MAGIC = 0x5A;
 
 const unsigned long COOLDOWN_MS = 30UL * 60UL * 1000UL;  // พักหลังให้อาหารเพราะแมวมา
 const int PRESENCE_CAP = 6;          // ให้เพราะแมวมาได้กี่ครั้งต่อวัน
+
+// เซ็นเซอร์วัดระดับเห็นก้นถังอย่างเดียว มองไม่เห็นผิวอาหาร ตัวเลขจึงไม่ขยับตามของจริง
+// ระหว่างนี้ใช้จำนวนมื้อที่จ่ายไปประมาณระดับแทน และบอกบนหน้าจอว่าเป็นค่าประมาณ
+const int MEALS_PER_HOPPER = 8;      // หนึ่งถังจ่ายได้กี่มื้อ ปรับตามปริมาณอาหารจริง
+int mealsSinceFill = 0;
+bool estArmed = false;               // ยังไม่กด "เติมอาหารแล้ว" = ยังไม่รู้ระดับ ห้ามเดา
 
 const unsigned long SAMPLE_MS = 60;  // อ่านเซ็นเซอร์แต่ละตัวทุกกี่มิลลิวินาที
 const int BUF_N = 5;                 // เก็บค่าล่าสุดกี่ครั้งเพื่อหาค่ากลาง
@@ -80,6 +99,8 @@ struct Ranger {
   int next = 0;
   unsigned long dueAt = 0;
   float last = -1;
+  unsigned long okAt = 0;   // ครั้งล่าสุดที่อ่านได้ค่าจริง ใช้ตัดค่าเก่าที่ค้าง
+  float minSeen = 999, maxSeen = 0;  // ระยะที่เคยอ่านได้ ใช้ตัดสินว่าเซ็นเซอร์ยังวัดอะไรอยู่
 };
 
 Ranger presence = {PRESENCE_TRIG, PRESENCE_ECHO, {0}, 0, 0, 0, -1};
@@ -118,6 +139,7 @@ const char PAGE[] PROGMEM = R"HTML(<!DOCTYPE html>
   }
   @property --p{syntax:"<number>";inherits:false;initial-value:0}
   *{box-sizing:border-box}
+  [hidden]{display:none!important}
   html{-webkit-text-size-adjust:100%}
   body{
     margin:0;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5;
@@ -184,11 +206,46 @@ const char PAGE[] PROGMEM = R"HTML(<!DOCTYPE html>
         border:1px solid rgba(168,84,0,.35);animation:radar 2.2s var(--ease) infinite}
   @keyframes radar{0%{transform:scale(.62);opacity:.9}100%{transform:scale(1);opacity:0}}
 
+  /* ---------- calibrate hopper ---------- */
+  .cal{margin-top:8px;padding-top:7px;border-top:1px solid var(--line-soft)}
+  .cal summary{list-style:none;cursor:pointer;text-align:center;padding:3px 0;
+        font-size:11.5px;color:var(--green);border-radius:8px}
+  .cal summary::-webkit-details-marker{display:none}
+  .cal summary:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .calBtns{display:flex;gap:6px;margin-top:6px}
+  .calBtns button{flex:1;min-height:36px;font:inherit;font-size:11.5px;font-weight:600;
+        color:var(--ink);background:var(--surface);border:1px solid var(--line);
+        border-radius:9px;cursor:pointer}
+  .calBtns button:hover{border-color:var(--ink)}
+  .calBtns button:active{transform:scale(.97)}
+  .calBtns button:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+  .calBtns button:disabled{opacity:.5;cursor:default;transform:none}
+  .cal small{display:block;margin-top:6px;font-size:10px;color:var(--muted);
+        text-align:center;line-height:1.4}
+  #calNow{font-variant-numeric:tabular-nums;color:var(--ink);opacity:.7}
+  .calFill{display:block;width:100%;min-height:34px;margin-top:8px;font:inherit;font-size:11.5px;
+        font-weight:600;color:#fff;background:var(--green);border:1px solid var(--green);
+        border-radius:9px;cursor:pointer}
+  .calFill:hover{background:#17503a;border-color:#17503a}
+  .calFill:active{transform:scale(.97)}
+  .calFill:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+  .calFill:disabled{opacity:.5;cursor:default;transform:none}
+  .calReset{display:block;width:100%;margin-top:4px;padding:4px;font:inherit;font-size:10.5px;
+        color:var(--muted);background:none;border:0;cursor:pointer;text-decoration:underline}
+  .calReset:hover{color:var(--ink)}
+  .calReset:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
   /* ---------- schedule + log ---------- */
   .head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px}
   .head h2{margin:0;font-size:12.5px;font-weight:500;color:var(--muted)}
   .head span{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
   .sched{margin-top:20px}
+  #next{margin-left:auto}
+  .edit{padding:2px 9px;font:inherit;font-size:11.5px;color:var(--green);
+        background:none;border:1px solid var(--line);border-radius:999px;cursor:pointer}
+  .edit:hover{border-color:var(--green)}
+  .edit:active{transform:scale(.96)}
+  .edit:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
   .chips{display:flex;gap:8px;margin:0;padding:0;list-style:none}
   .chip{flex:1;padding:9px 4px 8px;border-radius:12px;border:1px solid var(--line);
         text-align:center;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;
@@ -196,6 +253,23 @@ const char PAGE[] PROGMEM = R"HTML(<!DOCTYPE html>
   .chip small{display:block;margin-top:1px;font-size:10px;font-weight:400;color:var(--muted)}
   .chip.next{background:var(--green);border-color:var(--green);color:#fff}
   .chip.next small{color:rgba(255,255,255,.78)}
+
+  .times{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0}
+  .times label{font-size:10.5px;color:var(--muted);text-align:center}
+  .times input{width:100%;margin-top:3px;padding:9px 2px;font:inherit;font-size:14px;
+        font-weight:500;font-variant-numeric:tabular-nums;text-align:center;
+        color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:12px}
+  .times input:focus-visible{outline:2px solid var(--green);outline-offset:1px;border-color:var(--green)}
+  .timesFoot{grid-column:1/-1;display:flex;gap:8px;margin-top:2px}
+  .timesFoot button{flex:1;min-height:38px;font:inherit;font-size:13px;font-weight:600;
+        border-radius:11px;cursor:pointer;border:1px solid var(--line);
+        background:var(--surface);color:var(--ink)}
+  .timesFoot .save{background:var(--green);border-color:var(--green);color:#fff}
+  .timesFoot button:hover{border-color:var(--ink)}
+  .timesFoot .save:hover{background:#17503a;border-color:#17503a}
+  .timesFoot button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .timesFoot button:active{transform:scale(.985)}
+  .timesFoot button:disabled{opacity:.55;cursor:default;transform:none}
 
   .log{margin-top:20px}
   .log ol{list-style:none;margin:0;padding:0;border-top:1px solid var(--line-soft)}
@@ -264,6 +338,17 @@ const char PAGE[] PROGMEM = R"HTML(<!DOCTYPE html>
         <div class="dialIn"><b id="level">–</b><span>%</span></div>
       </div>
       <p id="levelNote">รอค่าจากเซ็นเซอร์</p>
+      <details class="cal">
+        <summary>ปรับเทียบระดับอาหาร</summary>
+        <div class="calBtns">
+          <button type="button" data-cal="empty">ตอนถังว่าง</button>
+          <button type="button" data-cal="full">ตอนถังเต็ม</button>
+        </div>
+        <small id="calNow">ตอนนี้อ่านระยะไม่ได้</small>
+        <small>วางถังไว้ที่ตำแหน่งใช้งานจริง แล้วกดปุ่มให้ตรงกับปริมาณข้างใน</small>
+        <button type="button" class="calFill" id="refill">เติมอาหารแล้ว (เต็มถัง)</button>
+        <button type="button" class="calReset" data-cal="reset">คืนค่าเริ่มต้น</button>
+      </details>
     </section>
 
     <section class="panel">
@@ -280,8 +365,18 @@ const char PAGE[] PROGMEM = R"HTML(<!DOCTYPE html>
     <div class="head">
       <h2>ตั้งเวลาไว้</h2>
       <span id="next">–</span>
+      <button type="button" class="edit" id="edit" aria-controls="times">แก้ไข</button>
     </div>
     <ul class="chips" id="chips"></ul>
+    <form class="times" id="times" hidden>
+      <label>รอบ 1<input type="time" value="08:00" required></label>
+      <label>รอบ 2<input type="time" value="13:00" required></label>
+      <label>รอบ 3<input type="time" value="18:00" required></label>
+      <div class="timesFoot">
+        <button type="button" class="ghost" id="cancel">ยกเลิก</button>
+        <button type="submit" class="save">บันทึก</button>
+      </div>
+    </form>
   </section>
 
   <section class="log">
@@ -302,7 +397,7 @@ const char PAGE[] PROGMEM = R"HTML(<!DOCTYPE html>
 
 <script>
   var $ = function (id) { return document.getElementById(id); };
-  var busy = false, lastState = null;
+  var busy = false, lastState = null, timesNow = [];
 
   function toMin(hhmm) {
     var p = String(hhmm).split(':');
@@ -324,6 +419,7 @@ const char PAGE[] PROGMEM = R"HTML(<!DOCTYPE html>
   function renderChips(schedule, now) {
     var times = String(schedule || '').split('·').map(function (s) { return s.trim(); })
                 .filter(function (s) { return /^\d\d:\d\d$/.test(s); });
+    timesNow = times;
     var next = null;
     if (/^\d\d:\d\d/.test(now) && times.length) {
       var cur = toMin(now), best = 1e9;
@@ -384,15 +480,24 @@ const char PAGE[] PROGMEM = R"HTML(<!DOCTYPE html>
       : (s.last && s.last !== '-' ? 'ล่าสุด ' + s.last + ' · ' + s.source : 'ยังไม่เคยให้อาหาร');
     $('count').textContent = s.count;
 
-    var pct = (typeof s.level === 'number') ? s.level : -1;
+    var est = s.src === 'est';
+    var pct = est ? (typeof s.est === 'number' ? s.est : -1)
+                  : (typeof s.level === 'number' ? s.level : -1);
     var ring = $('ring');
     var tone = pct < 15 ? '--red' : pct < 40 ? '--amber' : '--green';
     ring.style.setProperty('--p', pct < 0 ? 0 : pct);
     ring.style.setProperty('--tone', 'var(' + tone + ')');
     $('level').textContent = pct < 0 ? '–' : pct;
-    $('levelNote').textContent = pct < 0 ? 'อ่านค่าไม่ได้ ตรวจเซ็นเซอร์'
+    $('levelNote').textContent = est
+      ? (pct <= 0 ? 'ประมาณว่าไม่เหลือแล้ว เติมอาหาร' : pct < 40 ? 'ประมาณว่าเหลือน้อย' : 'ประมาณจากการให้อาหาร')
+      : pct < 0 ? 'อ่านค่าไม่ได้ ตรวจเซ็นเซอร์'
       : pct < 15 ? 'ใกล้หมดแล้ว เติมอาหาร'
       : pct < 40 ? 'เหลือน้อย' : 'ยังมีพอ';
+
+    var cm = (typeof s.lvlcm === 'number' && s.lvlcm > 0) ? s.lvlcm.toFixed(1) : null;
+    $('calNow').textContent = (cm && typeof s.calF === 'number')
+      ? 'อ่านได้ ' + cm + ' ซม. · เต็ม ' + s.calF.toFixed(1) + ' · ว่าง ' + s.calE.toFixed(1) + ' ซม.'
+      : 'ตอนนี้อ่านระยะไม่ได้';
 
     var near = (typeof s.near === 'number') ? s.near : -1;
     var cat = !!s.cat && near >= 0;
@@ -414,6 +519,17 @@ const char PAGE[] PROGMEM = R"HTML(<!DOCTYPE html>
     document.body.classList.add('off');
     $('net').textContent = 'ต่อบอร์ดไม่ได้ กำลังลองใหม่';
     $('rssi').textContent = 'สัญญาณขาด';
+  }
+
+  function setEditing(on) {
+    $('chips').hidden = on;
+    $('times').hidden = !on;
+    $('next').hidden = on;
+    $('edit').hidden = on;
+    if (!on) { $('edit').focus(); return; }
+    var inputs = $('times').querySelectorAll('input');
+    timesNow.forEach(function (t, i) { if (inputs[i]) inputs[i].value = t; });
+    inputs[0].focus();
   }
 
   function toast(msg) {
@@ -452,6 +568,63 @@ const char PAGE[] PROGMEM = R"HTML(<!DOCTYPE html>
       });
   });
 
+  $('edit').addEventListener('click', function () { setEditing(true); });
+  $('cancel').addEventListener('click', function () { setEditing(false); });
+
+  $('times').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var inputs = this.querySelectorAll('input');
+    var values = [];
+    for (var i = 0; i < inputs.length; i++) {
+      if (!inputs[i].value) { toast('ใส่เวลาให้ครบ 3 รอบ'); return; }
+      values.push(inputs[i].value);
+    }
+    var btn = this.querySelector('.save');
+    btn.disabled = true;
+    fetch('/schedule?t=' + encodeURIComponent(values.join(',')), { method: 'POST', cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw r.status; return r.json(); })
+      .then(function (s) { render(s); setEditing(false); toast('บันทึกเวลาแล้ว'); })
+      .catch(function (err) {
+        if (err === 400) toast('รูปแบบเวลาไม่ถูกต้อง');
+        else { offline(); toast('บันทึกไม่สำเร็จ ลองอีกครั้ง'); }
+      })
+      .then(function () { btn.disabled = false; });
+  });
+
+  function calibrate(btn) {
+    var p = btn.dataset.cal;
+    btn.disabled = true;
+    fetch('/cal?p=' + p, { method: 'POST', cache: 'no-store' })
+      .then(function (r) {
+        return r.json().then(function (b) { if (!r.ok) throw b; return b; });
+      })
+      .then(function (s) {
+        render(s);
+        toast(p === 'reset' ? 'คืนค่าเดิมแล้ว' : p === 'empty' ? 'จำจุดถังว่างแล้ว' : 'จำจุดถังเต็มแล้ว');
+      })
+      .catch(function (err) {
+        if (err && err.why === 'noecho') toast('ตอนนี้อ่านระยะไม่ได้ ยังกดไม่ได้');
+        else if (err && err.why === 'order') toast('อ่านได้ ' + err.cm.toFixed(1) + ' ซม. ห่างจากถังว่างไม่พอ');
+        else { offline(); toast('บันทึกไม่สำเร็จ ลองอีกครั้ง'); }
+      })
+      .then(function () { btn.disabled = false; });
+  }
+
+  var calBtns = document.querySelectorAll('[data-cal]');
+  for (var c = 0; c < calBtns.length; c++) {
+    calBtns[c].addEventListener('click', function () { calibrate(this); });
+  }
+
+  $('refill').addEventListener('click', function () {
+    var b = this;
+    b.disabled = true;
+    fetch('/refill', { method: 'POST', cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw r.status; return r.json(); })
+      .then(function (s) { render(s); toast('ตั้งเป็นเต็มถังแล้ว'); })
+      .catch(function () { offline(); toast('บันทึกไม่สำเร็จ ลองอีกครั้ง'); })
+      .then(function () { b.disabled = false; });
+  });
+
   document.addEventListener('visibilitychange', refresh);
   refresh();
   setInterval(refresh, 2000);
@@ -483,6 +656,9 @@ void sampleRanger(Ranger &r, unsigned long now) {
 
   float cm = readOnce(r);
   if (cm < 0) return;
+  r.okAt = now;
+  if (cm < r.minSeen) r.minSeen = cm;
+  if (cm > r.maxSeen) r.maxSeen = cm;
 
   r.buf[r.next] = cm;
   r.next = (r.next + 1) % BUF_N;
@@ -500,13 +676,26 @@ void sampleRanger(Ranger &r, unsigned long now) {
 }
 
 int hopperPercent() {
+  // เซ็นเซอร์หลุดหรืองงเงียบไปนานแล้ว ต้องบอกว่าอ่านไม่ได้ ไม่ใช่โชว์ค่าเก่าค้าง
   if (level.last < 0 || level.filled == 0) return -1;
-  float span = LEVEL_EMPTY_CM - LEVEL_FULL_CM;
-  if (span <= 0) return -1;
-  float pct = (LEVEL_EMPTY_CM - level.last) / span * 100.0;
+  if (millis() - level.okAt > LEVEL_STALE_MS) return -1;
+
+  float span = levelEmptyCm - levelFullCm;
+  if (span < 2.0) return -1;   // ค่าปรับเทียบสลับข้างหรือชิดกันเกินไป
+  float pct = (levelEmptyCm - level.last) / span * 100.0;
   if (pct < 0) pct = 0;
   if (pct > 100) pct = 100;
   return (int)(pct + 0.5);
+}
+
+// ระยะที่ไม่เคยขยับเกิน 2 ซม. เลยทั้งที่อาหารหมดไปแล้ว คือเซ็นเซอร์มองอะไรนิ่ง ๆ อยู่ ไม่ได้วัดผิวอาหาร
+bool levelAlive() {
+  return level.filled >= BUF_N && (level.maxSeen - level.minSeen) >= 2.0;
+}
+
+int levelEstimate() {
+  int pct = 100 - mealsSinceFill * 100 / MEALS_PER_HOPPER;
+  return pct < 0 ? 0 : pct;
 }
 
 void checkPresence() {
@@ -536,11 +725,83 @@ void checkPresence() {
 }
 
 // ---------------------------------------------------------------- เวลาและการให้อาหาร
+void saveSchedule() {
+  EEPROM.write(0, EEPROM_MAGIC);
+  for (int i = 0; i < SCHEDULE_COUNT; i++) {
+    EEPROM.write(1 + i * 2, schedule[i].hour);
+    EEPROM.write(2 + i * 2, schedule[i].minute);
+  }
+  EEPROM.commit();
+}
+
+void loadSchedule() {
+  bool ok = EEPROM.read(0) == EEPROM_MAGIC;
+  for (int i = 0; ok && i < SCHEDULE_COUNT; i++) {
+    uint8_t h = EEPROM.read(1 + i * 2);
+    uint8_t m = EEPROM.read(2 + i * 2);
+    if (h > 23 || m > 59) ok = false;
+    schedule[i].hour = h;
+    schedule[i].minute = m;
+  }
+  if (ok) return;
+  for (int i = 0; i < SCHEDULE_COUNT; i++) schedule[i] = DEFAULT_SCHEDULE[i];
+  saveSchedule();
+}
+
+// ระยะปรับเทียบเก็บเป็นเซนติเมตรคูณสิบใน uint16 สองช่อง ต่อจากตารางมื้อ
+void saveLevelCal() {
+  uint16_t full = (uint16_t)(levelFullCm * 10.0 + 0.5);
+  uint16_t empty = (uint16_t)(levelEmptyCm * 10.0 + 0.5);
+  EEPROM.write(7, CAL_MAGIC);
+  EEPROM.write(8, full >> 8);
+  EEPROM.write(9, full & 0xFF);
+  EEPROM.write(10, empty >> 8);
+  EEPROM.write(11, empty & 0xFF);
+  EEPROM.commit();
+}
+
+void loadLevelCal() {
+  if (EEPROM.read(7) != CAL_MAGIC) return;
+  uint16_t full = ((uint16_t)EEPROM.read(8) << 8) | EEPROM.read(9);
+  uint16_t empty = ((uint16_t)EEPROM.read(10) << 8) | EEPROM.read(11);
+  float f = full / 10.0;
+  float e = empty / 10.0;
+  // 4 ซม. คือขอบล่างที่ HC-SR04 ยังอ่านได้ และถังว่างต้องไกลกว่าถังเต็มอย่างน้อย 2 ซม.
+  if (f < 4.0 || e > 250.0 || e < f + 2.0) return;
+  levelFullCm = f;
+  levelEmptyCm = e;
+}
+
+bool parseHhmm(const String &s, FeedTime &t) {
+  if (s.length() != 5 || s[2] != ':') return false;
+  if (!isDigit(s[0]) || !isDigit(s[1]) || !isDigit(s[3]) || !isDigit(s[4])) return false;
+  t.hour = (s[0] - '0') * 10 + (s[1] - '0');
+  t.minute = (s[3] - '0') * 10 + (s[4] - '0');
+  return t.hour < 24 && t.minute < 60;
+}
+
+// รับ "HH:MM,HH:MM,HH:MM" ตรวจให้ครบก่อนแล้วค่อยทับ ของเดิม ค่าที่ผิดจึงไม่ทำให้ตารางพัง
+bool applySchedule(const String &spec) {
+  FeedTime next[SCHEDULE_COUNT];
+  int start = 0;
+  for (int i = 0; i < SCHEDULE_COUNT; i++) {
+    bool last = (i == SCHEDULE_COUNT - 1);
+    int comma = spec.indexOf(',', start);
+    if (last ? comma >= 0 : comma < 0) return false;
+    String part = last ? spec.substring(start) : spec.substring(start, comma);
+    if (!parseHhmm(part, next[i])) return false;
+    start = comma + 1;
+  }
+  for (int i = 0; i < SCHEDULE_COUNT; i++) schedule[i] = next[i];
+  saveSchedule();
+  return true;
+}
+
 String scheduleText() {
   String s = "";
   for (int i = 0; i < SCHEDULE_COUNT; i++) {
     char buf[6];
-    snprintf(buf, sizeof(buf), "%02d:%02d", SCHEDULE_HOUR[i], SCHEDULE_MINUTE);
+    snprintf(buf, sizeof(buf), "%02d:%02d", schedule[i].hour, schedule[i].minute);
     if (i) s += " · ";
     s += buf;
   }
@@ -581,6 +842,7 @@ void markFeed(const char* source) {
 
 void feed(const char* source) {
   markFeed(source);
+  if (mealsSinceFill < MEALS_PER_HOPPER) mealsSinceFill++;
   servo.write(OPEN_DEG);
   feeder.open = true;
   feeder.openedAt = millis();
@@ -604,7 +866,7 @@ void checkSchedule() {
   lastMinuteKey = key;
 
   for (int i = 0; i < SCHEDULE_COUNT; i++) {
-    if (t.tm_hour == SCHEDULE_HOUR[i] && t.tm_min == SCHEDULE_MINUTE) {
+    if (t.tm_hour == schedule[i].hour && t.tm_min == schedule[i].minute) {
       feed("ตั้งเวลา");
       return;
     }
@@ -617,8 +879,11 @@ const String& statusJson() {
   static bool sized = false;
   if (!sized) { out.reserve(720); sized = true; }
 
-  char num[64];
+  char num[96];   // 64 เคยตัด "hist":[ ทิ้ง ค่าที่สั้นกว่านี้จึงผ่าน สลับไปมาไม่นิ่ง
+  bool measured = levelAlive();
+  const char* src = measured ? "sensor" : (estArmed ? "est" : "none");
   int pct = hopperPercent();
+  int shown = measured ? pct : (estArmed ? levelEstimate() : -1);
 
   out = "{\"open\":";
   out += feeder.open ? "true" : "false";
@@ -633,9 +898,10 @@ const String& statusJson() {
   out += scheduleText();
   out += "\",\"ip\":\"";
   out += WiFi.localIP().toString();
-  snprintf(num, sizeof(num),
-           "\",\"rssi\":%d,\"level\":%d,\"near\":%.1f,\"cat\":%s,\"cap\":%d,\"hist\":[",
-           WiFi.RSSI(), pct, presence.last, catNow ? "true" : "false", presenceToday);
+  int n = snprintf(num, sizeof(num),
+                   "\",\"rssi\":%d,\"level\":%d,\"near\":%.1f,\"cat\":%s,\"cap\":%d,\"hist\":[",
+                   WiFi.RSSI(), shown, presence.last, catNow ? "true" : "false", presenceToday);
+  if (n >= (int)sizeof(num)) Serial.println("status: num สั้นเกิน");
   out += num;
 
   for (int i = 0; i < historyCount; i++) {
@@ -647,10 +913,11 @@ const String& statusJson() {
     out += history[idx].source;
     out += "\"}";
   }
-  out += "]}";
+  snprintf(num, sizeof(num), "],\"src\":\"%s\",\"est\":%d,\"lvlcm\":%.1f,\"calF\":%.1f,\"calE\":%.1f}",
+           src, levelEstimate(), level.last, levelFullCm, levelEmptyCm);
+  out += num;
   return out;
 }
-
 void keepWifi() {
   if (WiFi.status() == WL_CONNECTED) {
     if (!announced) {
@@ -692,6 +959,10 @@ void setup() {
   presence.dueAt = millis();
   level.dueAt = millis() + SAMPLE_MS / 2;
 
+  EEPROM.begin(EEPROM_BYTES);
+  loadSchedule();
+  loadLevelCal();
+
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   configTime(TZ_OFFSET, 0, "pool.ntp.org", "time.nist.gov");
@@ -704,6 +975,54 @@ void setup() {
   });
   server.on("/feed", HTTP_POST, []() {
     feed("เว็บ");
+    server.send(200, "application/json; charset=utf-8", statusJson());
+  });
+  server.on("/schedule", HTTP_POST, []() {
+    if (!applySchedule(server.arg("t"))) {
+      server.send(400, "application/json; charset=utf-8", "{\"ok\":false}");
+      return;
+    }
+    server.send(200, "application/json; charset=utf-8", statusJson());
+  });
+  // เอาค่าระยะที่เซ็นเซอร์อ่านได้เดี๋ยวนี้ไปเป็นจุดอ้างอิง ผู้ใช้วางถังให้ตรงแล้วกดปุ่มเดียว
+  server.on("/cal", HTTP_POST, []() {
+    String p = server.arg("p");
+    if (p == "reset") {
+      levelFullCm = LEVEL_FULL_CM;
+      levelEmptyCm = LEVEL_EMPTY_CM;
+      saveLevelCal();
+      server.send(200, "application/json; charset=utf-8", statusJson());
+      return;
+    }
+    if (p != "full" && p != "empty") {
+      server.send(400, "application/json; charset=utf-8", "{\"ok\":false}");
+      return;
+    }
+    char body[128];
+    float cm = level.last;
+    bool fresh = level.filled > 0 && millis() - level.okAt <= LEVEL_STALE_MS;
+    if (!fresh || cm < 3.0 || cm > 250.0) {
+      snprintf(body, sizeof(body), "{\"ok\":false,\"why\":\"noecho\",\"cm\":%.1f}", fresh ? cm : -1.0f);
+      server.send(409, "application/json; charset=utf-8", body);
+      return;
+    }
+    float f = (p == "full") ? cm : levelFullCm;
+    float e = (p == "empty") ? cm : levelEmptyCm;
+    if (e < f + 2.0) {
+      snprintf(body, sizeof(body), "{\"ok\":false,\"why\":\"order\",\"cm\":%.1f,\"f\":%.1f,\"e\":%.1f}", cm, f, e);
+      server.send(409, "application/json; charset=utf-8", body);
+      return;
+    }
+    levelFullCm = f;
+    levelEmptyCm = e;
+    saveLevelCal();
+    server.send(200, "application/json; charset=utf-8", statusJson());
+  });
+  server.on("/refill", HTTP_POST, []() {
+    mealsSinceFill = 0;
+    estArmed = true;
+    level.minSeen = 999;
+    level.maxSeen = 0;
     server.send(200, "application/json; charset=utf-8", statusJson());
   });
   server.onNotFound([]() {
@@ -719,10 +1038,12 @@ void loop() {
   static unsigned long lastStatus = 0;
   if (millis() - lastStatus > 2000) {
     lastStatus = millis();
-    Serial.printf("flap %s  meals %d  level %d%%  near %.1f cm  cat %s  rssi %d\n",
+    Serial.printf("flap %s  meals %d  level %d%% (%.1f cm)  est %d%%  near %.1f cm  cat %s  rssi %d\n",
                   feeder.open ? "open" : "shut",
                   feeder.countToday,
                   hopperPercent(),
+                  level.last,
+                  levelEstimate(),
                   presence.last,
                   catNow ? "yes" : "no",
                   WiFi.RSSI());
