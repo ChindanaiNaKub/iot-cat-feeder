@@ -89,8 +89,8 @@ def write_body(doc, counter):
         ["Scheduled meals fired", "TC-04", "3", "of 3"],
         ["Schedule drift", "TC-04", "0", "minutes"],
         ["Open angle commanded", "Servo test", "135", "degrees"],
-        ["Pieces per meal, mean", "Portion trial", "24.3", "pieces"],
-        ["Pieces per meal, range", "Portion trial", "18 to 30", "pieces"],
+        ["Pieces per meal, mean", "Portion trial", "22.0", "pieces"],
+        ["Pieces per meal, range", "Portion trial", "18 to 25", "pieces"],
         ["Reboots during the tests", "All", "0", "count"],
     ], widths=[5.6, 2.6, 4.2, 4.1])
 
@@ -172,13 +172,13 @@ def write_body(doc, counter):
               "change in food size or flow rate changes the meal size. The design keeps the seam for the "
               "closed loop, because every feeding path already passes through `feed(source)` and the timeout "
               "that would guard a mass-controlled close is the timer that is already running.")
-    para(doc, "Three consecutive cycles at the same dwell produced 18, 25, and 30 pieces, a mean of 24.3 and "
-              "a spread of about 25 percent either side of it. That is wider than the 15 percent tolerance the "
-              "requirement names, so the open loop does not hold a portion. Two candidates explain a spread of "
-              "this size, bridging in the hopper and the head of food pressing on the flap, and the firmware "
-              "measures neither, so the report does not attribute the spread to one of them. The result is the "
-              "argument for closing the loop rather than tuning the dwell. No single dwell compensates for a "
-              "variable the controller cannot see.")
+    para(doc, "Three consecutive cycles at the same dwell produced 18, 25, and 23 pieces, a mean of 22. Against "
+              "the 15 percent window the requirement sets, the upper two cycles sit inside it and the lowest "
+              "sits outside, 18 percent below the mean. A spread that size is not a margin an owner can rely "
+              "on, and it cannot be tuned away. The two candidates are bridging in the hopper and the head of "
+              "food pressing on the flap, and the firmware measures neither, so the report does not attribute "
+              "the spread to one of them. The result is the argument for closing the loop rather than tuning the "
+              "dwell, because no single dwell compensates for a variable the controller cannot see.")
 
     h2(doc, "3.6", "Defects found and fixed")
     bullets(doc, [

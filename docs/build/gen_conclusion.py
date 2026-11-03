@@ -75,7 +75,7 @@ def write_body(doc, counter):
               "calibrate the cell against a known mass, and close the loop. The controller would open the flap, "
               "sample the mass, and close when the target is reached, with the existing timeout as the guard "
               "against a stalled or disconnected cell. The seam is already there, because every feeding path "
-              "passes through `feed(source)`. The spread of 18 to 30 pieces per cycle measured in Section 11.5 "
+              "passes through `feed(source)`. The spread of 18 to 25 pieces per cycle measured in Section 11.5 "
               "is the case for it.")
 
     h2(doc, "2.2", "Persistence and notification")
