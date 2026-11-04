@@ -115,6 +115,12 @@ def write_body(doc, counter):
            width_cm=8.5)
     figure(doc, counter, str(EVIDENCE / "01.jpg"),
            "Inside the enclosure, from above: controller, wiring, servo linkage, and bowl.", width_cm=14.0)
+    figure(doc, counter, str(EVIDENCE / "05.jpg"),
+           "The flap pivot where it passes through the hopper wall, seen from above the open hopper.",
+           width_cm=14.0)
+    figure(doc, counter, str(EVIDENCE / "06.jpg"),
+           "The hopper chute with dry food resting in it, looking down past the cardboard baffles.",
+           width_cm=9.0)
     figure(doc, counter, str(EVIDENCE / "02.jpg"),
            "The open enclosure with the power cable leaving the box for the powerbank.", width_cm=8.5)
     figure(doc, counter, str(EVIDENCE / "03.jpg"),
